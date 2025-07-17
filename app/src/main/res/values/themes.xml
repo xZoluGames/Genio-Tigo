@@ -1,0 +1,194 @@
+<resources>
+    <!-- Base Material3 Theme -->
+    <style name="Theme.GenioTigo" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_light_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_light_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_light_onPrimaryContainer</item>
+
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/md_theme_light_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_light_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_light_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_light_onSecondaryContainer</item>
+
+        <!-- Tertiary brand color -->
+        <item name="colorTertiary">@color/md_theme_light_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_light_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_light_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_light_onTertiaryContainer</item>
+
+        <!-- Error color -->
+        <item name="colorError">@color/md_theme_light_error</item>
+        <item name="colorErrorContainer">@color/md_theme_light_errorContainer</item>
+        <item name="colorOnError">@color/md_theme_light_onError</item>
+        <item name="colorOnErrorContainer">@color/md_theme_light_onErrorContainer</item>
+
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/md_theme_light_background</item>
+        <item name="colorOnBackground">@color/md_theme_light_onBackground</item>
+        <item name="colorSurface">@color/md_theme_light_surface</item>
+        <item name="colorOnSurface">@color/md_theme_light_onSurface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_light_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_light_onSurfaceVariant</item>
+
+        <!-- Other colors -->
+        <item name="colorOutline">@color/md_theme_light_outline</item>
+        <item name="colorSurfaceInverse">@color/md_theme_light_inverseSurface</item>
+        <item name="colorOnSurfaceInverse">@color/md_theme_light_inverseOnSurface</item>
+        <item name="colorPrimaryInverse">@color/md_theme_light_inversePrimary</item>
+
+        <!-- System bars -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <!-- Shape -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.GenioTigo.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.GenioTigo.MediumComponent</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.GenioTigo.LargeComponent</item>
+
+        <!-- Typography -->
+        <item name="textAppearanceHeadline1">@style/TextAppearance.GenioTigo.Headline1</item>
+        <item name="textAppearanceHeadline2">@style/TextAppearance.GenioTigo.Headline2</item>
+        <item name="textAppearanceHeadline3">@style/TextAppearance.GenioTigo.Headline3</item>
+        <item name="textAppearanceHeadline4">@style/TextAppearance.GenioTigo.Headline4</item>
+        <item name="textAppearanceHeadline5">@style/TextAppearance.GenioTigo.Headline5</item>
+        <item name="textAppearanceHeadline6">@style/TextAppearance.GenioTigo.Headline6</item>
+        <item name="textAppearanceSubtitle1">@style/TextAppearance.GenioTigo.Subtitle1</item>
+        <item name="textAppearanceSubtitle2">@style/TextAppearance.GenioTigo.Subtitle2</item>
+        <item name="textAppearanceBody1">@style/TextAppearance.GenioTigo.Body1</item>
+        <item name="textAppearanceBody2">@style/TextAppearance.GenioTigo.Body2</item>
+        <item name="textAppearanceButton">@style/TextAppearance.GenioTigo.Button</item>
+        <item name="textAppearanceCaption">@style/TextAppearance.GenioTigo.Caption</item>
+        <item name="textAppearanceOverline">@style/TextAppearance.GenioTigo.Overline</item>
+
+        <!-- Component styles -->
+        <item name="materialButtonStyle">@style/Widget.GenioTigo.Button</item>
+        <item name="materialCardViewStyle">@style/Widget.GenioTigo.CardView</item>
+        <item name="textInputStyle">@style/Widget.GenioTigo.TextInputLayout</item>
+    </style>
+
+    <!-- Theme with ActionBar -->
+    <style name="Theme.GenioTigo.WithActionBar" parent="Theme.Material3.DayNight">
+        <!-- Inherit all properties from main theme -->
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorPrimaryVariant">@color/md_theme_light_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_light_onPrimary</item>
+        <item name="colorSecondary">@color/md_theme_light_secondary</item>
+        <item name="colorSecondaryVariant">@color/md_theme_light_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_light_onSecondary</item>
+    </style>
+
+    <!-- Shape Appearances -->
+    <style name="ShapeAppearance.GenioTigo.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <style name="ShapeAppearance.GenioTigo.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="ShapeAppearance.GenioTigo.LargeComponent" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <!-- Typography -->
+    <style name="TextAppearance.GenioTigo.Headline1" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/bevan</item>
+        <item name="android:textSize">32sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Headline2" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/bevan</item>
+        <item name="android:textSize">28sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Headline3" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/bevan</item>
+        <item name="android:textSize">24sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Headline4" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Headline5" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Headline6" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Subtitle1" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Subtitle2" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Body1" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Body2" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Button" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="TextAppearance.GenioTigo.Overline" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textSize">10sp</item>
+    </style>
+
+    <!-- Component Styles -->
+    <style name="Widget.GenioTigo.Button" parent="Widget.Material3.Button">
+        <item name="android:textAppearance">@style/TextAppearance.GenioTigo.Button</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.GenioTigo.SmallComponent</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <style name="Widget.GenioTigo.Button.OutlinedButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textAppearance">@style/TextAppearance.GenioTigo.Button</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.GenioTigo.SmallComponent</item>
+    </style>
+
+    <style name="Widget.GenioTigo.Button.TextButton" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textAppearance">@style/TextAppearance.GenioTigo.Button</item>
+    </style>
+
+    <style name="Widget.GenioTigo.CardView" parent="Widget.Material3.CardView.Elevated">
+        <item name="shapeAppearance">@style/ShapeAppearance.GenioTigo.MediumComponent</item>
+        <item name="cardElevation">4dp</item>
+    </style>
+
+    <style name="Widget.GenioTigo.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="shapeAppearance">@style/ShapeAppearance.GenioTigo.SmallComponent</item>
+        <item name="boxStrokeColor">@color/md_theme_light_primary</item>
+    </style>
+
+    <!-- Legacy compatibility styles -->
+    <style name="AppTheme" parent="Theme.GenioTigo">
+        <!-- Redirects to new theme -->
+    </style>
+
+    <style name="AppTheme.WithActionBar" parent="Theme.GenioTigo.WithActionBar">
+        <!-- Redirects to new theme -->
+    </style>
+</resources>

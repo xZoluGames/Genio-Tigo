@@ -1,5 +1,7 @@
 package com.example.geniotecni.tigo.managers
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -10,16 +12,21 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import com.example.geniotecni.tigo.R
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.slider.Slider
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import org.json.JSONObject
 import java.io.File
-import java.io.FileOutputStream
-import java.io.FileInputStream
 
 class EditModeManager(
     private val context: Context,
     private val activity: AppCompatActivity,
-    private val rootLayout: ConstraintLayout,
+    private val rootLayout: CoordinatorLayout,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -30,6 +37,7 @@ class EditModeManager(
         private const val COMPONENT_POSITION_X_KEY = "component_position_x"
         private const val COMPONENT_POSITION_Y_KEY = "component_position_y"
         private const val SERVICE_CONFIG_KEY = "service_config"
+        private const val CONFIG_VERSION = "3.1"
     }
 
     private var isEditMode = false
@@ -38,30 +46,29 @@ class EditModeManager(
     private var dragStartX = 0f
     private var dragStartY = 0f
     private var isDragging = false
+    private var originalPositions = mutableMapOf<View, Pair<Float, Float>>()
 
     // Edit mode UI components
-    private lateinit var editButton: Button
-    private lateinit var cancelButton: Button
-    private lateinit var saveButton: Button
-    private lateinit var resetButton: Button
-    private lateinit var exportButton: Button
-    private lateinit var importButton: Button
+    private lateinit var editButton: MaterialButton
+    private lateinit var editButtonsContainer: View
+    private lateinit var cancelButton: MaterialButton
+    private lateinit var saveButton: MaterialButton
+    private lateinit var resetButton: MaterialButton
+    private lateinit var exportButton: MaterialButton
+    private lateinit var importButton: MaterialButton
     private lateinit var selectionIndicator: View
     private lateinit var editModeOverlay: View
-    private lateinit var editControlsPanel: LinearLayout
-    
+    private lateinit var editControlsPanel: MaterialCardView
+
     // Edit controls
     private lateinit var editControlsTitle: TextView
-    private lateinit var scaleSeekBar: SeekBar
-    private lateinit var scaleValue: TextView
-    private lateinit var textSizeSeekBar: SeekBar
-    private lateinit var textSizeValue: TextView
-    private lateinit var letterSpacingSeekBar: SeekBar
-    private lateinit var letterSpacingValue: TextView
+    private lateinit var scaleSlider: Slider
+    private lateinit var textSizeSlider: Slider
+    private lateinit var letterSpacingSlider: Slider
     private lateinit var textSizeControl: LinearLayout
     private lateinit var letterSpacingControl: LinearLayout
-    private lateinit var applyChangesButton: Button
-    private lateinit var cancelChangesButton: Button
+    private lateinit var applyChangesButton: MaterialButton
+    private lateinit var cancelChangesButton: MaterialButton
 
     // Activity result launchers
     private val createDocumentLauncher = activity.registerForActivityResult(
@@ -77,50 +84,56 @@ class EditModeManager(
     }
 
     fun initializeEditMode() {
-        // Find all UI components
-        editButton = activity.findViewById(com.example.geniotecni.tigo.R.id.editButton)
-        cancelButton = activity.findViewById(com.example.geniotecni.tigo.R.id.cancelButton)
-        saveButton = activity.findViewById(com.example.geniotecni.tigo.R.id.saveButton)
-        resetButton = activity.findViewById(com.example.geniotecni.tigo.R.id.resetButton)
-        exportButton = activity.findViewById(com.example.geniotecni.tigo.R.id.exportButton)
-        importButton = activity.findViewById(com.example.geniotecni.tigo.R.id.importButton)
-        selectionIndicator = activity.findViewById(com.example.geniotecni.tigo.R.id.selectionIndicator)
-        editModeOverlay = activity.findViewById(com.example.geniotecni.tigo.R.id.editModeOverlay)
-        editControlsPanel = activity.findViewById(com.example.geniotecni.tigo.R.id.editControlsPanel)
-        
-        // Find edit controls
-        editControlsTitle = activity.findViewById(com.example.geniotecni.tigo.R.id.editControlsTitle)
-        scaleSeekBar = activity.findViewById(com.example.geniotecni.tigo.R.id.scaleSeekBar)
-        scaleValue = activity.findViewById(com.example.geniotecni.tigo.R.id.scaleValue)
-        textSizeSeekBar = activity.findViewById(com.example.geniotecni.tigo.R.id.textSizeSeekBar)
-        textSizeValue = activity.findViewById(com.example.geniotecni.tigo.R.id.textSizeValue)
-        letterSpacingSeekBar = activity.findViewById(com.example.geniotecni.tigo.R.id.letterSpacingSeekBar)
-        letterSpacingValue = activity.findViewById(com.example.geniotecni.tigo.R.id.letterSpacingValue)
-        textSizeControl = activity.findViewById(com.example.geniotecni.tigo.R.id.textSizeControl)
-        letterSpacingControl = activity.findViewById(com.example.geniotecni.tigo.R.id.letterSpacingControl)
-        applyChangesButton = activity.findViewById(com.example.geniotecni.tigo.R.id.applyChangesButton)
-        cancelChangesButton = activity.findViewById(com.example.geniotecni.tigo.R.id.cancelChangesButton)
-
-        setupEditModeListeners()
-        setupComponentTouchListeners(rootLayout)
-        loadCurrentConfiguration()
+        try {
+            findViews()
+            setupListeners()
+            setupComponentTouchListeners(rootLayout)
+            loadCurrentConfiguration()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showSnackbar("Error al inicializar modo edición: ${e.message}")
+        }
     }
 
-    private fun setupEditModeListeners() {
+    private fun findViews() {
+        // Find all UI components
+        editButton = activity.findViewById(R.id.editButton)
+        editButtonsContainer = activity.findViewById(R.id.editButtonsContainer)
+        cancelButton = activity.findViewById(R.id.cancelButton)
+        saveButton = activity.findViewById(R.id.saveButton)
+        resetButton = activity.findViewById(R.id.resetButton)
+        exportButton = activity.findViewById(R.id.exportButton)
+        importButton = activity.findViewById(R.id.importButton)
+        selectionIndicator = activity.findViewById(R.id.selectionIndicator)
+        editModeOverlay = activity.findViewById(R.id.editModeOverlay)
+        editControlsPanel = activity.findViewById(R.id.editControlsPanel)
+
+        // Find edit controls
+        editControlsTitle = activity.findViewById(R.id.editControlsTitle)
+        scaleSlider = activity.findViewById(R.id.scaleSlider)
+        textSizeSlider = activity.findViewById(R.id.textSizeSlider)
+        letterSpacingSlider = activity.findViewById(R.id.letterSpacingSlider)
+        textSizeControl = activity.findViewById(R.id.textSizeControl)
+        letterSpacingControl = activity.findViewById(R.id.letterSpacingControl)
+        applyChangesButton = activity.findViewById(R.id.applyChangesButton)
+        cancelChangesButton = activity.findViewById(R.id.cancelChangesButton)
+    }
+
+    private fun setupListeners() {
         editButton.setOnClickListener {
             toggleEditMode()
         }
 
         cancelButton.setOnClickListener {
-            exitEditMode()
+            exitEditMode(false)
         }
 
         saveButton.setOnClickListener {
-            showSaveDialog()
+            saveAllChanges()
         }
 
         resetButton.setOnClickListener {
-            resetToDefault()
+            showResetConfirmation()
         }
 
         exportButton.setOnClickListener {
@@ -131,51 +144,42 @@ class EditModeManager(
             importConfiguration()
         }
 
-        // Setup edit controls
         setupEditControls()
     }
 
     private fun setupEditControls() {
-        scaleSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser && selectedComponent != null) {
-                    val scale = 0.5f + (progress / 100f) * 1.5f
-                    selectedComponent?.scaleX = scale
-                    selectedComponent?.scaleY = scale
-                    scaleValue.text = String.format("%.1f", scale)
+        scaleSlider.addOnChangeListener { _, value, fromUser ->
+            if (fromUser && selectedComponent != null) {
+                selectedComponent?.apply {
+                    scaleX = value
+                    scaleY = value
+                    updateSelectionIndicator()
                 }
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+        }
 
-        textSizeSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser && selectedComponent is TextView) {
-                    val textSize = 8f + progress
-                    (selectedComponent as TextView).textSize = textSize
-                    textSizeValue.text = "${textSize.toInt()}sp"
+        textSizeSlider.addOnChangeListener { _, value, fromUser ->
+            if (fromUser && selectedComponent != null) {
+                when (val component = selectedComponent) {
+                    is TextView -> component.textSize = value
+                    is TextInputEditText -> component.textSize = value
                 }
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+        }
 
-        letterSpacingSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser && selectedComponent is TextView) {
-                    val letterSpacing = progress / 100f
-                    (selectedComponent as TextView).letterSpacing = letterSpacing
-                    letterSpacingValue.text = String.format("%.2f", letterSpacing)
+        letterSpacingSlider.addOnChangeListener { _, value, fromUser ->
+            if (fromUser && selectedComponent != null) {
+                when (val component = selectedComponent) {
+                    is TextView -> component.letterSpacing = value
+                    is TextInputEditText -> component.letterSpacing = value
                 }
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+        }
 
         applyChangesButton.setOnClickListener {
             saveComponentConfiguration(selectedComponent)
             hideEditControls()
+            showSnackbar("Cambios aplicados")
         }
 
         cancelChangesButton.setOnClickListener {
@@ -187,17 +191,19 @@ class EditModeManager(
     private fun setupComponentTouchListeners(viewGroup: ViewGroup) {
         for (i in 0 until viewGroup.childCount) {
             val child = viewGroup.getChildAt(i)
-            
-            child.setOnTouchListener { view, event ->
-                if (isEditMode && isEditableComponent(view)) {
-                    handleComponentTouch(view, event)
-                    true
-                } else {
-                    false
+
+            if (isEditableComponent(child)) {
+                child.setOnTouchListener { view, event ->
+                    if (isEditMode) {
+                        handleComponentTouch(view, event)
+                        true
+                    } else {
+                        false
+                    }
                 }
             }
 
-            if (child is ViewGroup) {
+            if (child is ViewGroup && child !is TextInputLayout) {
                 setupComponentTouchListeners(child)
             }
         }
@@ -205,22 +211,17 @@ class EditModeManager(
 
     private fun isEditableComponent(view: View): Boolean {
         return when (view.id) {
-            com.example.geniotecni.tigo.R.id.serviceImage,
-            com.example.geniotecni.tigo.R.id.serviceTitle,
-            com.example.geniotecni.tigo.R.id.phoneLabel,
-            com.example.geniotecni.tigo.R.id.phoneInput,
-            com.example.geniotecni.tigo.R.id.cedulaLabel,
-            com.example.geniotecni.tigo.R.id.cedulaInput,
-            com.example.geniotecni.tigo.R.id.amountLabel,
-            com.example.geniotecni.tigo.R.id.amountInput,
-            com.example.geniotecni.tigo.R.id.dateLabel,
-            com.example.geniotecni.tigo.R.id.dateInput,
-            com.example.geniotecni.tigo.R.id.confirmLabel,
-            com.example.geniotecni.tigo.R.id.confirmButton,
-            com.example.geniotecni.tigo.R.id.infoButton,
-            com.example.geniotecni.tigo.R.id.increaseButton,
-            com.example.geniotecni.tigo.R.id.decreaseButton,
-            com.example.geniotecni.tigo.R.id.resetAmountButton -> true
+            R.id.serviceImage,
+            R.id.serviceTitle,
+            R.id.phoneInputLayout,
+            R.id.cedulaInputLayout,
+            R.id.amountInputLayout,
+            R.id.dateInputLayout,
+            R.id.confirmButton,
+            R.id.infoButton,
+            R.id.increaseButton,
+            R.id.decreaseButton,
+            R.id.resetAmountButton -> true
             else -> false
         }
     }
@@ -234,11 +235,11 @@ class EditModeManager(
                 isDragging = false
                 return true
             }
-            
+
             MotionEvent.ACTION_MOVE -> {
                 val deltaX = event.rawX - dragStartX
                 val deltaY = event.rawY - dragStartY
-                
+
                 if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
                     isDragging = true
                     if (isMovableComponent(view)) {
@@ -246,11 +247,12 @@ class EditModeManager(
                         view.translationY += deltaY
                         dragStartX = event.rawX
                         dragStartY = event.rawY
+                        updateSelectionIndicator()
                     }
                 }
                 return true
             }
-            
+
             MotionEvent.ACTION_UP -> {
                 if (!isDragging) {
                     showEditControls(view)
@@ -263,30 +265,48 @@ class EditModeManager(
 
     private fun isMovableComponent(view: View): Boolean {
         return when (view.id) {
-            com.example.geniotecni.tigo.R.id.confirmButton,
-            com.example.geniotecni.tigo.R.id.infoButton,
-            com.example.geniotecni.tigo.R.id.increaseButton,
-            com.example.geniotecni.tigo.R.id.decreaseButton,
-            com.example.geniotecni.tigo.R.id.resetAmountButton -> true
+            R.id.confirmButton,
+            R.id.infoButton,
+            R.id.increaseButton,
+            R.id.decreaseButton,
+            R.id.resetAmountButton -> true
             else -> false
         }
     }
 
     private fun selectComponent(view: View) {
         selectedComponent = view
-        
-        // Update selection indicator
-        val location = IntArray(2)
-        view.getLocationInWindow(location)
-        
-        val layoutParams = selectionIndicator.layoutParams as ConstraintLayout.LayoutParams
-        layoutParams.width = view.width
-        layoutParams.height = view.height
-        selectionIndicator.layoutParams = layoutParams
-        
-        selectionIndicator.x = view.x
-        selectionIndicator.y = view.y
-        selectionIndicator.visibility = View.VISIBLE
+        updateSelectionIndicator()
+        animateSelection()
+    }
+
+    private fun updateSelectionIndicator() {
+        selectedComponent?.let { view ->
+            val location = IntArray(2)
+            view.getLocationInWindow(location)
+
+            selectionIndicator.apply {
+                layoutParams = (layoutParams as CoordinatorLayout.LayoutParams).apply {
+                    width = (view.width * view.scaleX).toInt() + 20
+                    height = (view.height * view.scaleY).toInt() + 20
+                }
+                x = view.x + view.translationX - 10
+                y = view.y + view.translationY - 10
+                visibility = View.VISIBLE
+            }
+        }
+    }
+
+    private fun animateSelection() {
+        val scaleX = ObjectAnimator.ofFloat(selectionIndicator, "scaleX", 0.8f, 1.0f)
+        val scaleY = ObjectAnimator.ofFloat(selectionIndicator, "scaleY", 0.8f, 1.0f)
+        val alpha = ObjectAnimator.ofFloat(selectionIndicator, "alpha", 0f, 1f)
+
+        AnimatorSet().apply {
+            playTogether(scaleX, scaleY, alpha)
+            duration = 200
+            start()
+        }
     }
 
     private fun showEditControls(component: View) {
@@ -300,57 +320,76 @@ class EditModeManager(
             getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), 1.0f
         )
 
-        // Setup scale control
-        scaleSeekBar.progress = ((currentScale - 0.5f) * 100f / 1.5f).toInt()
-        scaleValue.text = String.format("%.1f", currentScale)
+        scaleSlider.value = currentScale
 
         // Show/hide text controls based on component type
-        val isTextComponent = component is TextView || component is EditText
+        val isTextComponent = component is TextView || component is TextInputEditText ||
+                (component is TextInputLayout && component.editText != null)
+
         textSizeControl.visibility = if (isTextComponent) View.VISIBLE else View.GONE
         letterSpacingControl.visibility = if (isTextComponent) View.VISIBLE else View.GONE
 
         if (isTextComponent) {
-            val currentTextSize = preferencesManager.getFloat(
-                getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16.0f
-            )
-            val currentLetterSpacing = preferencesManager.getFloat(
-                getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0.0f
-            )
+            val textView = when (component) {
+                is TextView -> component
+                is TextInputEditText -> component
+                is TextInputLayout -> component.editText
+                else -> null
+            } as? TextView
 
-            textSizeSeekBar.progress = (currentTextSize - 8f).toInt()
-            textSizeValue.text = "${currentTextSize.toInt()}sp"
-            
-            letterSpacingSeekBar.progress = (currentLetterSpacing * 100f).toInt()
-            letterSpacingValue.text = String.format("%.2f", currentLetterSpacing)
+            textView?.let {
+                val currentTextSize = preferencesManager.getFloat(
+                    getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), it.textSize
+                )
+                val currentLetterSpacing = preferencesManager.getFloat(
+                    getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), it.letterSpacing
+                )
+
+                textSizeSlider.value = currentTextSize
+                letterSpacingSlider.value = currentLetterSpacing
+            }
         }
 
-        editControlsPanel.visibility = View.VISIBLE
+        // Animate panel appearance
+        editControlsPanel.apply {
+            visibility = View.VISIBLE
+            alpha = 0f
+            translationY = 100f
+            animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(300)
+                .start()
+        }
     }
 
     private fun hideEditControls() {
-        editControlsPanel.visibility = View.GONE
+        editControlsPanel.animate()
+            .alpha(0f)
+            .translationY(100f)
+            .setDuration(200)
+            .withEndAction {
+                editControlsPanel.visibility = View.GONE
+            }
+            .start()
+
         selectionIndicator.visibility = View.GONE
         selectedComponent = null
     }
 
     private fun getComponentDisplayName(component: View): String {
         return when (component.id) {
-            com.example.geniotecni.tigo.R.id.serviceImage -> "Imagen del Servicio"
-            com.example.geniotecni.tigo.R.id.serviceTitle -> "Título del Servicio"
-            com.example.geniotecni.tigo.R.id.phoneLabel -> "Etiqueta Teléfono"
-            com.example.geniotecni.tigo.R.id.phoneInput -> "Campo Teléfono"
-            com.example.geniotecni.tigo.R.id.cedulaLabel -> "Etiqueta Cédula"
-            com.example.geniotecni.tigo.R.id.cedulaInput -> "Campo Cédula"
-            com.example.geniotecni.tigo.R.id.amountLabel -> "Etiqueta Monto"
-            com.example.geniotecni.tigo.R.id.amountInput -> "Campo Monto"
-            com.example.geniotecni.tigo.R.id.dateLabel -> "Etiqueta Fecha"
-            com.example.geniotecni.tigo.R.id.dateInput -> "Campo Fecha"
-            com.example.geniotecni.tigo.R.id.confirmLabel -> "Etiqueta Confirmar"
-            com.example.geniotecni.tigo.R.id.confirmButton -> "Botón Confirmar"
-            com.example.geniotecni.tigo.R.id.infoButton -> "Botón Info"
-            com.example.geniotecni.tigo.R.id.increaseButton -> "Botón Aumentar"
-            com.example.geniotecni.tigo.R.id.decreaseButton -> "Botón Disminuir"
-            com.example.geniotecni.tigo.R.id.resetAmountButton -> "Botón Reset"
+            R.id.serviceImage -> "Imagen del Servicio"
+            R.id.serviceTitle -> "Título del Servicio"
+            R.id.phoneInputLayout -> "Campo Teléfono"
+            R.id.cedulaInputLayout -> "Campo Cédula"
+            R.id.amountInputLayout -> "Campo Monto"
+            R.id.dateInputLayout -> "Campo Fecha"
+            R.id.confirmButton -> "Botón Confirmar"
+            R.id.infoButton -> "Botón Info"
+            R.id.increaseButton -> "Botón Aumentar"
+            R.id.decreaseButton -> "Botón Disminuir"
+            R.id.resetAmountButton -> "Botón Reset"
             else -> "Componente"
         }
     }
@@ -358,10 +397,9 @@ class EditModeManager(
     private fun saveComponentConfiguration(component: View?) {
         component?.let {
             val componentKey = getComponentKey(it)
-            val scale = it.scaleX
-            
+
             preferencesManager.putFloat(
-                getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), scale
+                getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), it.scaleX
             )
             preferencesManager.putFloat(
                 getServiceComponentKey(COMPONENT_POSITION_X_KEY, componentKey), it.translationX
@@ -370,23 +408,35 @@ class EditModeManager(
                 getServiceComponentKey(COMPONENT_POSITION_Y_KEY, componentKey), it.translationY
             )
 
-            if (it is TextView) {
-                preferencesManager.putFloat(
-                    getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), it.textSize
-                )
-                preferencesManager.putFloat(
-                    getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), it.letterSpacing
-                )
+            when (it) {
+                is TextView -> {
+                    preferencesManager.putFloat(
+                        getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), it.textSize
+                    )
+                    preferencesManager.putFloat(
+                        getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), it.letterSpacing
+                    )
+                }
+                is TextInputLayout -> {
+                    it.editText?.let { editText ->
+                        preferencesManager.putFloat(
+                            getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), editText.textSize
+                        )
+                        preferencesManager.putFloat(
+                            getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), editText.letterSpacing
+                        )
+                    }
+                }
+
+                else -> {}
             }
-            
-            showToast("Configuración guardada")
         }
     }
 
     private fun loadComponentConfiguration(component: View?) {
         component?.let {
             val componentKey = getComponentKey(it)
-            
+
             val scale = preferencesManager.getFloat(
                 getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), 1.0f
             )
@@ -402,38 +452,50 @@ class EditModeManager(
             it.translationX = positionX
             it.translationY = positionY
 
-            if (it is TextView) {
-                val textSize = preferencesManager.getFloat(
-                    getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16.0f
-                )
-                val letterSpacing = preferencesManager.getFloat(
-                    getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0.0f
-                )
-                
-                it.textSize = textSize
-                it.letterSpacing = letterSpacing
+            when (it) {
+                is TextView -> {
+                    val textSize = preferencesManager.getFloat(
+                        getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), it.textSize
+                    )
+                    val letterSpacing = preferencesManager.getFloat(
+                        getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), it.letterSpacing
+                    )
+
+                    it.textSize = textSize
+                    it.letterSpacing = letterSpacing
+                }
+                is TextInputLayout -> {
+                    it.editText?.let { editText ->
+                        val textSize = preferencesManager.getFloat(
+                            getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), editText.textSize
+                        )
+                        val letterSpacing = preferencesManager.getFloat(
+                            getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), editText.letterSpacing
+                        )
+
+                        editText.textSize = textSize
+                        editText.letterSpacing = letterSpacing
+                    }
+                }
+
+                else -> {}
             }
         }
     }
 
     private fun getComponentKey(component: View): String {
         return when (component.id) {
-            com.example.geniotecni.tigo.R.id.serviceImage -> "serviceImage"
-            com.example.geniotecni.tigo.R.id.serviceTitle -> "serviceTitle"
-            com.example.geniotecni.tigo.R.id.phoneLabel -> "phoneLabel"
-            com.example.geniotecni.tigo.R.id.phoneInput -> "phoneInput"
-            com.example.geniotecni.tigo.R.id.cedulaLabel -> "cedulaLabel"
-            com.example.geniotecni.tigo.R.id.cedulaInput -> "cedulaInput"
-            com.example.geniotecni.tigo.R.id.amountLabel -> "amountLabel"
-            com.example.geniotecni.tigo.R.id.amountInput -> "amountInput"
-            com.example.geniotecni.tigo.R.id.dateLabel -> "dateLabel"
-            com.example.geniotecni.tigo.R.id.dateInput -> "dateInput"
-            com.example.geniotecni.tigo.R.id.confirmLabel -> "confirmLabel"
-            com.example.geniotecni.tigo.R.id.confirmButton -> "confirmButton"
-            com.example.geniotecni.tigo.R.id.infoButton -> "infoButton"
-            com.example.geniotecni.tigo.R.id.increaseButton -> "increaseButton"
-            com.example.geniotecni.tigo.R.id.decreaseButton -> "decreaseButton"
-            com.example.geniotecni.tigo.R.id.resetAmountButton -> "resetAmountButton"
+            R.id.serviceImage -> "serviceImage"
+            R.id.serviceTitle -> "serviceTitle"
+            R.id.phoneInputLayout -> "phoneInput"
+            R.id.cedulaInputLayout -> "cedulaInput"
+            R.id.amountInputLayout -> "amountInput"
+            R.id.dateInputLayout -> "dateInput"
+            R.id.confirmButton -> "confirmButton"
+            R.id.infoButton -> "infoButton"
+            R.id.increaseButton -> "increaseButton"
+            R.id.decreaseButton -> "decreaseButton"
+            R.id.resetAmountButton -> "resetAmountButton"
             else -> "unknown_${component.id}"
         }
     }
@@ -444,182 +506,99 @@ class EditModeManager(
 
     private fun toggleEditMode() {
         isEditMode = !isEditMode
-        
+
         if (isEditMode) {
             enterEditMode()
         } else {
-            exitEditMode()
+            exitEditMode(true)
         }
     }
 
     private fun enterEditMode() {
+        // Save original positions
+        saveOriginalPositions()
+
+        // Show/hide UI elements
         editButton.visibility = View.GONE
-        cancelButton.visibility = View.VISIBLE
-        saveButton.visibility = View.VISIBLE
-        resetButton.visibility = View.VISIBLE
-        exportButton.visibility = View.VISIBLE
-        importButton.visibility = View.VISIBLE
+        editButtonsContainer.visibility = View.VISIBLE
         editModeOverlay.visibility = View.VISIBLE
-        
-        showToast("Modo de edición activado. Toca componentes para editarlos.")
+
+        // Animate overlay appearance
+        editModeOverlay.alpha = 0f
+        editModeOverlay.animate()
+            .alpha(1f)
+            .setDuration(300)
+            .start()
+
+        showSnackbar("Modo de edición activado. Toca los componentes para editarlos.")
     }
 
-    private fun exitEditMode() {
+    private fun exitEditMode(saveChanges: Boolean) {
+        if (!saveChanges) {
+            // Restore original positions
+            restoreOriginalPositions()
+        }
+
+        isEditMode = false
         editButton.visibility = View.VISIBLE
-        cancelButton.visibility = View.GONE
-        saveButton.visibility = View.GONE
-        resetButton.visibility = View.GONE
-        exportButton.visibility = View.GONE
-        importButton.visibility = View.GONE
-        editModeOverlay.visibility = View.GONE
+        editButtonsContainer.visibility = View.GONE
+
+        // Animate overlay disappearance
+        editModeOverlay.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction {
+                editModeOverlay.visibility = View.GONE
+            }
+            .start()
+
+        hideEditControls()
         selectionIndicator.visibility = View.GONE
-        editControlsPanel.visibility = View.GONE
         selectedComponent = null
-        
-        showToast("Modo de edición desactivado.")
+
+        showSnackbar(if (saveChanges) "Cambios guardados" else "Cambios descartados")
     }
 
-    private fun showSaveDialog() {
-        val input = EditText(context)
-        input.hint = "Nombre del archivo de configuración"
-        
-        AlertDialog.Builder(context)
-            .setTitle("Guardar Configuración")
-            .setMessage("Ingrese el nombre para el archivo de configuración:")
-            .setView(input)
-            .setPositiveButton("Guardar") { _, _ ->
-                val fileName = input.text.toString().trim()
-                if (fileName.isNotEmpty()) {
-                    saveConfiguration(fileName)
-                } else {
-                    showToast("Por favor ingrese un nombre válido")
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-
-    private fun saveConfiguration(fileName: String) {
-        try {
-            val configFileName = "${fileName}_service_${currentServiceType}_${System.currentTimeMillis()}.json"
-            createDocumentLauncher.launch(configFileName)
-        } catch (e: Exception) {
-            showToast("Error al iniciar guardado: ${e.message}")
+    private fun saveOriginalPositions() {
+        originalPositions.clear()
+        getAllEditableViews().forEach { view ->
+            originalPositions[view] = Pair(view.translationX, view.translationY)
         }
     }
 
-    private fun exportConfiguration() {
-        showSaveDialog()
-    }
-
-    private fun saveConfigurationToUri(uri: Uri) {
-        try {
-            val config = JSONObject()
-            config.put("serviceType", currentServiceType)
-            config.put("version", "3.0")
-            config.put("timestamp", System.currentTimeMillis())
-            
-            val componentsConfig = JSONObject()
-            
-            // Save configuration for all components
-            val editableComponents = listOf(
-                "serviceImage", "serviceTitle", "phoneLabel", "phoneInput",
-                "cedulaLabel", "cedulaInput", "amountLabel", "amountInput",
-                "dateLabel", "dateInput", "confirmLabel", "confirmButton", "infoButton",
-                "increaseButton", "decreaseButton", "resetAmountButton"
-            )
-            
-            editableComponents.forEach { componentKey ->
-                val componentConfig = JSONObject()
-                
-                componentConfig.put("scale", preferencesManager.getFloat(
-                    getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), 1.0f
-                ))
-                componentConfig.put("positionX", preferencesManager.getFloat(
-                    getServiceComponentKey(COMPONENT_POSITION_X_KEY, componentKey), 0f
-                ))
-                componentConfig.put("positionY", preferencesManager.getFloat(
-                    getServiceComponentKey(COMPONENT_POSITION_Y_KEY, componentKey), 0f
-                ))
-                componentConfig.put("textSize", preferencesManager.getFloat(
-                    getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16.0f
-                ))
-                componentConfig.put("letterSpacing", preferencesManager.getFloat(
-                    getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0.0f
-                ))
-                
-                componentsConfig.put(componentKey, componentConfig)
-            }
-            
-            config.put("components", componentsConfig)
-
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                outputStream.write(config.toString(2).toByteArray())
-            }
-
-            showToast("Configuración exportada exitosamente")
-            exitEditMode()
-        } catch (e: Exception) {
-            showToast("Error al exportar: ${e.message}")
+    private fun restoreOriginalPositions() {
+        originalPositions.forEach { (view, position) ->
+            view.translationX = position.first
+            view.translationY = position.second
         }
     }
 
-    private fun importConfiguration() {
-        try {
-            openDocumentLauncher.launch(arrayOf("application/json"))
-        } catch (e: Exception) {
-            showToast("Error al iniciar importación: ${e.message}")
+    private fun getAllEditableViews(): List<View> {
+        val views = mutableListOf<View>()
+        val ids = listOf(
+            R.id.serviceImage, R.id.serviceTitle,
+            R.id.phoneInputLayout, R.id.cedulaInputLayout,
+            R.id.amountInputLayout, R.id.dateInputLayout,
+            R.id.confirmButton, R.id.infoButton,
+            R.id.increaseButton, R.id.decreaseButton,
+            R.id.resetAmountButton
+        )
+
+        ids.forEach { id ->
+            activity.findViewById<View>(id)?.let { views.add(it) }
         }
+
+        return views
     }
 
-    private fun loadConfigurationFromUri(uri: Uri) {
-        try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                val content = inputStream.bufferedReader().use { it.readText() }
-                val config = JSONObject(content)
-                
-                val serviceType = config.optInt("serviceType", currentServiceType)
-                val components = config.optJSONObject("components")
-                
-                components?.let { componentsConfig ->
-                    val componentKeys = componentsConfig.keys()
-                    while (componentKeys.hasNext()) {
-                        val componentKey = componentKeys.next()
-                        val componentConfig = componentsConfig.getJSONObject(componentKey)
-                        
-                        val scale = componentConfig.optDouble("scale", 1.0).toFloat()
-                        val positionX = componentConfig.optDouble("positionX", 0.0).toFloat()
-                        val positionY = componentConfig.optDouble("positionY", 0.0).toFloat()
-                        val textSize = componentConfig.optDouble("textSize", 16.0).toFloat()
-                        val letterSpacing = componentConfig.optDouble("letterSpacing", 0.0).toFloat()
-                        
-                        preferencesManager.putFloat(
-                            getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), scale
-                        )
-                        preferencesManager.putFloat(
-                            getServiceComponentKey(COMPONENT_POSITION_X_KEY, componentKey), positionX
-                        )
-                        preferencesManager.putFloat(
-                            getServiceComponentKey(COMPONENT_POSITION_Y_KEY, componentKey), positionY
-                        )
-                        preferencesManager.putFloat(
-                            getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), textSize
-                        )
-                        preferencesManager.putFloat(
-                            getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), letterSpacing
-                        )
-                    }
-                }
-                
-                loadCurrentConfiguration()
-                showToast("Configuración importada exitosamente")
-            }
-        } catch (e: Exception) {
-            showToast("Error al importar: ${e.message}")
+    private fun saveAllChanges() {
+        getAllEditableViews().forEach { view ->
+            saveComponentConfiguration(view)
         }
+        exitEditMode(true)
     }
 
-    private fun resetToDefault() {
+    private fun showResetConfirmation() {
         AlertDialog.Builder(context)
             .setTitle("Resetear Configuración")
             .setMessage("¿Estás seguro de que quieres resetear todos los componentes a sus valores por defecto?")
@@ -631,49 +610,154 @@ class EditModeManager(
     }
 
     private fun performReset() {
-        val editableComponents = listOf(
-            "serviceImage", "serviceTitle", "phoneLabel", "phoneInput",
-            "cedulaLabel", "cedulaInput", "amountLabel", "amountInput",
-            "dateLabel", "dateInput", "confirmLabel", "confirmButton", "infoButton",
-            "increaseButton", "decreaseButton", "resetAmountButton"
-        )
-        
-        editableComponents.forEach { componentKey ->
+        getAllEditableViews().forEach { view ->
+            val componentKey = getComponentKey(view)
+
             // Clear all saved preferences for this component
             preferencesManager.putFloat(getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), 1.0f)
             preferencesManager.putFloat(getServiceComponentKey(COMPONENT_POSITION_X_KEY, componentKey), 0f)
             preferencesManager.putFloat(getServiceComponentKey(COMPONENT_POSITION_Y_KEY, componentKey), 0f)
-            preferencesManager.putFloat(getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16.0f)
-            preferencesManager.putFloat(getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0.0f)
+
+            // Reset view properties
+            view.scaleX = 1.0f
+            view.scaleY = 1.0f
+            view.translationX = 0f
+            view.translationY = 0f
+
+            when (view) {
+                is TextView -> {
+                    preferencesManager.putFloat(getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16.0f)
+                    preferencesManager.putFloat(getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0.0f)
+                    view.textSize = 16.0f
+                    view.letterSpacing = 0.0f
+                }
+                is TextInputLayout -> {
+                    view.editText?.let { editText ->
+                        preferencesManager.putFloat(getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16.0f)
+                        preferencesManager.putFloat(getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0.0f)
+                        editText.textSize = 16.0f
+                        editText.letterSpacing = 0.0f
+                    }
+                }
+            }
         }
-        
-        loadCurrentConfiguration()
-        showToast("Configuración reseteada a valores por defecto")
+
+        showSnackbar("Configuración reseteada a valores por defecto")
+    }
+
+    private fun exportConfiguration() {
+        val fileName = "config_servicio_${currentServiceType}_${System.currentTimeMillis()}.json"
+        createDocumentLauncher.launch(fileName)
+    }
+
+    private fun importConfiguration() {
+        openDocumentLauncher.launch(arrayOf("application/json"))
+    }
+
+    private fun saveConfigurationToUri(uri: Uri) {
+        try {
+            val config = JSONObject()
+            config.put("serviceType", currentServiceType)
+            config.put("version", CONFIG_VERSION)
+            config.put("timestamp", System.currentTimeMillis())
+
+            val componentsConfig = JSONObject()
+
+            getAllEditableViews().forEach { view ->
+                val componentKey = getComponentKey(view)
+                val componentConfig = JSONObject()
+
+                componentConfig.put("scale", view.scaleX)
+                componentConfig.put("positionX", view.translationX)
+                componentConfig.put("positionY", view.translationY)
+
+                when (view) {
+                    is TextView -> {
+                        componentConfig.put("textSize", view.textSize)
+                        componentConfig.put("letterSpacing", view.letterSpacing)
+                    }
+                    is TextInputLayout -> {
+                        view.editText?.let { editText ->
+                            componentConfig.put("textSize", editText.textSize)
+                            componentConfig.put("letterSpacing", editText.letterSpacing)
+                        }
+                    }
+                }
+
+                componentsConfig.put(componentKey, componentConfig)
+            }
+
+            config.put("components", componentsConfig)
+
+            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                outputStream.write(config.toString(2).toByteArray())
+            }
+
+            showSnackbar("Configuración exportada exitosamente")
+        } catch (e: Exception) {
+            showSnackbar("Error al exportar: ${e.message}")
+        }
+    }
+
+    private fun loadConfigurationFromUri(uri: Uri) {
+        try {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                val content = inputStream.bufferedReader().use { it.readText() }
+                val config = JSONObject(content)
+
+                // Verify version compatibility
+                val version = config.optString("version", "1.0")
+                if (version != CONFIG_VERSION) {
+                    showSnackbar("Versión de configuración incompatible")
+                    return
+                }
+
+                val serviceType = config.optInt("serviceType", currentServiceType)
+                if (serviceType != currentServiceType) {
+                    showSnackbar("Esta configuración es para otro tipo de servicio")
+                    return
+                }
+
+                val components = config.optJSONObject("components")
+                components?.let { componentsConfig ->
+                    getAllEditableViews().forEach { view ->
+                        val componentKey = getComponentKey(view)
+                        val componentConfig = componentsConfig.optJSONObject(componentKey)
+
+                        componentConfig?.let {
+                            view.scaleX = it.optDouble("scale", 1.0).toFloat()
+                            view.scaleY = view.scaleX
+                            view.translationX = it.optDouble("positionX", 0.0).toFloat()
+                            view.translationY = it.optDouble("positionY", 0.0).toFloat()
+
+                            when (view) {
+                                is TextView -> {
+                                    view.textSize = it.optDouble("textSize", 16.0).toFloat()
+                                    view.letterSpacing = it.optDouble("letterSpacing", 0.0).toFloat()
+                                }
+                                is TextInputLayout -> {
+                                    view.editText?.let { editText ->
+                                        editText.textSize = it.optDouble("textSize", 16.0).toFloat()
+                                        editText.letterSpacing = it.optDouble("letterSpacing", 0.0).toFloat()
+                                    }
+                                }
+                            }
+
+                            saveComponentConfiguration(view)
+                        }
+                    }
+                }
+
+                showSnackbar("Configuración importada exitosamente")
+            }
+        } catch (e: Exception) {
+            showSnackbar("Error al importar: ${e.message}")
+        }
     }
 
     private fun loadCurrentConfiguration() {
-        val editableComponentIds = listOf(
-            com.example.geniotecni.tigo.R.id.serviceImage,
-            com.example.geniotecni.tigo.R.id.serviceTitle,
-            com.example.geniotecni.tigo.R.id.phoneLabel,
-            com.example.geniotecni.tigo.R.id.phoneInput,
-            com.example.geniotecni.tigo.R.id.cedulaLabel,
-            com.example.geniotecni.tigo.R.id.cedulaInput,
-            com.example.geniotecni.tigo.R.id.amountLabel,
-            com.example.geniotecni.tigo.R.id.amountInput,
-            com.example.geniotecni.tigo.R.id.dateLabel,
-            com.example.geniotecni.tigo.R.id.dateInput,
-            com.example.geniotecni.tigo.R.id.confirmLabel,
-            com.example.geniotecni.tigo.R.id.confirmButton,
-            com.example.geniotecni.tigo.R.id.infoButton,
-            com.example.geniotecni.tigo.R.id.increaseButton,
-            com.example.geniotecni.tigo.R.id.decreaseButton,
-            com.example.geniotecni.tigo.R.id.resetAmountButton
-        )
-        
-        editableComponentIds.forEach { componentId ->
-            val component = rootLayout.findViewById<View>(componentId)
-            component?.let { loadComponentConfiguration(it) }
+        getAllEditableViews().forEach { view ->
+            loadComponentConfiguration(view)
         }
     }
 
@@ -688,7 +772,7 @@ class EditModeManager(
 
     fun isInEditMode(): Boolean = isEditMode
 
-    private fun showToast(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    private fun showSnackbar(message: String) {
+        Snackbar.make(rootLayout, message, Snackbar.LENGTH_SHORT).show()
     }
 }

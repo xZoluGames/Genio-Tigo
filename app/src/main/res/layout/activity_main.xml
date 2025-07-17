@@ -1,87 +1,316 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"        xmlns:app="http://schemas.android.com/apk/res-auto"        xmlns:tools="http://schemas.android.com/tools"        android:layout_width="match_parent"        android:layout_height="match_parent"        android:orientation="vertical"        android:padding="@dimen/default_padding"        android:background="@drawable/gradient_background">
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        android:background="@color/md_theme_light_background">
 
-    <ImageButton
-            android:layout_width="45dp"
-            android:layout_height="68dp"
-            app:srcCompat="@drawable/bt"
-            android:id="@+id/bt"
-            android:backgroundTint="#00FFFFFF"
-            android:scaleType="centerCrop"
-            app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginTop="-10dp"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-    <AutoCompleteTextView
-            android:id="@+id/autoCompleteTextView"
-            android:layout_width="0dp"
+    <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:maxLines="2"
-            android:singleLine="false"
-            android:hint="Seleccione el Servicio a Utilizar..."
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/print"
-            app:layout_constraintHorizontal_bias="0.326"
-            android:ellipsize="end"
-            android:scrollHorizontally="false"
-            android:textSize="@dimen/text_size_medium"
-            android:textColor="@color/black"
-            android:textColorHint="@color/gray"
-            android:background="@drawable/edittext_background"
-            android:padding="12dp" />
+            android:fitsSystemWindows="true"
+            app:liftOnScroll="true">
 
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:textSize="16sp"
-            android:fontFamily="serif"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/autoCompleteTextView"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintVertical_bias="1.0" />
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+                app:contentScrim="?attr/colorPrimary"
+                app:expandedTitleMarginStart="16dp"
+                app:expandedTitleMarginEnd="16dp"
+                app:expandedTitleTextAppearance="@style/TextAppearance.GenioTigo.Headline1">
 
-    <ImageButton
-            android:layout_width="58dp"
-            android:layout_height="53dp"
-            app:srcCompat="@drawable/impresora"
-            android:id="@+id/print"
-            android:scaleType="centerCrop"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/recyclerView"
-            app:layout_constraintVertical_bias="0.333"
-            app:layout_constraintEnd_toStartOf="@+id/stats"
-            android:tint="#00FFFFFF"
-            android:backgroundTint="#00FFFFFF" />
+            <!-- Header Background with gradient -->
+            <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/header_gradient"
+                    app:layout_collapseMode="parallax" />
 
-    <ImageButton
-            android:layout_width="45dp"
-            android:layout_height="53dp"
-            app:srcCompat="@android:drawable/ic_menu_today"
-            android:id="@+id/stats"
-            android:scaleType="centerCrop"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/recyclerView"
-            app:layout_constraintVertical_bias="0.333"
-            app:layout_constraintEnd_toStartOf="@+id/settings"
-            android:tint="#00FFFFFF"
-            android:backgroundTint="#00FFFFFF" />
+            <!-- Logo -->
+            <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_icgeniotecni_round"
+                    android:elevation="8dp"
+                    app:layout_collapseMode="parallax" />
 
-    <ImageButton
-            android:layout_width="45dp"
-            android:layout_height="53dp"
-            app:srcCompat="@android:drawable/ic_menu_preferences"
-            android:id="@+id/settings"
-            android:scaleType="centerCrop"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/recyclerView"
-            app:layout_constraintVertical_bias="0.333"
-            app:layout_constraintEnd_toStartOf="@+id/bt"
-            android:tint="#00FFFFFF"
-            android:backgroundTint="#00FFFFFF" />
+            <com.google.android.material.appbar.MaterialToolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    app:layout_collapseMode="pin"
+                    app:title="Genio Tigo"
+                    app:titleTextColor="@color/white" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
 
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+            <!-- Search Card -->
+            <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardElevation="4dp"
+                    app:cardCornerRadius="16dp"
+                    app:strokeWidth="0dp">
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Buscar Servicio"
+                            android:textAppearance="@style/TextAppearance.GenioTigo.Headline5"
+                            android:textColor="@color/md_theme_light_onSurface"
+                            android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            style="@style/Widget.GenioTigo.TextInputLayout"
+                            app:startIconDrawable="@drawable/ic_search"
+                            app:endIconMode="clear_text"
+                            app:hintEnabled="false">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                android:id="@+id/autoCompleteTextView"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Buscar servicios..."
+                                android:inputType="text"
+                                android:maxLines="1" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Quick Actions -->
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Acciones Rápidas"
+                    android:textAppearance="@style/TextAppearance.GenioTigo.Headline5"
+                    android:textColor="@color/md_theme_light_onBackground"
+                    android:layout_marginBottom="12dp" />
+
+            <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                    <!-- Print History -->
+                    <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardPrintHistory"
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            android:layout_marginEnd="12dp"
+                            app:cardElevation="2dp"
+                            app:cardCornerRadius="16dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:rippleColor="@color/md_theme_light_primary">
+
+                        <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                            <ImageView
+                                    android:id="@+id/print"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_print"
+                                    app:tint="@color/md_theme_light_primary" />
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Historial"
+                                    android:textSize="12sp"
+                                    android:layout_marginTop="8dp"
+                                    android:textColor="@color/md_theme_light_onSurface" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Statistics -->
+                    <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardStatistics"
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            android:layout_marginEnd="12dp"
+                            app:cardElevation="2dp"
+                            app:cardCornerRadius="16dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:rippleColor="@color/md_theme_light_secondary">
+
+                        <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                            <ImageView
+                                    android:id="@+id/stats"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_chart"
+                                    app:tint="@color/md_theme_light_secondary" />
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Estadísticas"
+                                    android:textSize="12sp"
+                                    android:layout_marginTop="8dp"
+                                    android:textColor="@color/md_theme_light_onSurface" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Settings -->
+                    <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardSettings"
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            android:layout_marginEnd="12dp"
+                            app:cardElevation="2dp"
+                            app:cardCornerRadius="16dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:rippleColor="@color/md_theme_light_tertiary">
+
+                        <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                            <ImageView
+                                    android:id="@+id/settings"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_settings"
+                                    app:tint="@color/md_theme_light_tertiary" />
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Configurar"
+                                    android:textSize="12sp"
+                                    android:layout_marginTop="8dp"
+                                    android:textColor="@color/md_theme_light_onSurface" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Bluetooth -->
+                    <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardBluetooth"
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            app:cardElevation="2dp"
+                            app:cardCornerRadius="16dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:rippleColor="@color/status_info">
+
+                        <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                            <ImageView
+                                    android:id="@+id/bt"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_bluetooth"
+                                    app:tint="@color/status_info" />
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Bluetooth"
+                                    android:textSize="12sp"
+                                    android:layout_marginTop="8dp"
+                                    android:textColor="@color/md_theme_light_onSurface" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+
+            </HorizontalScrollView>
+
+            <!-- Services Section -->
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Servicios Disponibles"
+                    android:textAppearance="@style/TextAppearance.GenioTigo.Headline5"
+                    android:textColor="@color/md_theme_light_onBackground"
+                    android:layout_marginBottom="12dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- FAB for quick add -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fabQuickAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:text="Nuevo"
+            app:icon="@drawable/ic_add"
+            app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

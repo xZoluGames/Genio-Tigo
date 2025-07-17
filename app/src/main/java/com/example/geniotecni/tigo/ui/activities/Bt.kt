@@ -265,6 +265,7 @@ class Bt : AppCompatActivity() {
         Toast.makeText(this, "Dispositivo guardado: $name", Toast.LENGTH_SHORT).show()
     }
 
+    @Deprecated("Deprecated in Java")
     @SuppressLint("MissingPermission")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)

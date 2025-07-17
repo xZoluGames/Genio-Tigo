@@ -1,70 +1,77 @@
 apply plugin: 'com.android.application'
-
 apply plugin: 'kotlin-android'
-
 apply plugin: 'kotlin-android-extensions'
-
 apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion 34
+    compileSdkVersion 35
     defaultConfig {
         applicationId 'com.example.geniotecni.tigo'
         minSdkVersion 27
-        targetSdkVersion 34
-        versionCode 1
-        versionName '1.1'
+        targetSdkVersion 35
+        versionCode 2
+        versionName '2.0'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
+    buildFeatures {
+        dataBinding true
+        viewBinding true
+    }
     buildTypes {
-        buildFeatures{
-            //noinspection DataBindingWithoutKapt
-            dataBinding  true
-            viewBinding = true
-        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    namespace 'com.example.geniotecni.tigo'
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.appcompat:appcompat:1.5.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.core:core-ktx:1.16.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.4'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 
-    // Updated and new dependencies
-    implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'com.android.volley:volley:1.2.0'
-    implementation 'com.google.android.material:material:1.11.0'
+    // Material Design 3
+    implementation 'com.google.android.material:material:1.12.0'
+
+    // Updated dependencies
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
-    
-    // For PDF export
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+
+    // PDF export
     implementation 'com.itextpdf:itextg:5.5.10'
-    
-    // For charts
+
+    // Charts - MPAndroidChart
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
-    
-    // For navigation
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.7.6'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.7.6'
+
+    // Navigation
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.9.2'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.9.2'
 
     // ViewModel and LiveData
-    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.9.2'
 
     // Room database
-    implementation "androidx.datastore:datastore-preferences:1.1.0-alpha01"
-    implementation "androidx.room:room-runtime:2.4.3"
-    kapt "androidx.room:room-compiler:2.4.3"
-    implementation "androidx.room:room-ktx:2.4.3"
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
-}
+    implementation "androidx.room:room-runtime:2.7.2"
+    kapt "androidx.room:room-compiler:2.7.2"
+    implementation "androidx.room:room-ktx:2.7.2"
 
+    // SwipeRefreshLayout
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+
+    // Lottie for animations
+    implementation 'com.airbnb.android:lottie:6.3.0'
+
+    // Glide for image loading
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+
+    // Material Icons Extended
+    implementation 'androidx.compose.material:material-icons-extended:1.7.8'
+}

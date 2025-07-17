@@ -1,604 +1,491 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/gradient_background"
-    android:padding="@dimen/default_padding">
-
-    <!-- Edit Mode Controls -->
-    <LinearLayout
-        android:id="@+id/editModeControls"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_height="match_parent"
+        android:background="@color/md_theme_light_background">
 
-        <Button
-            android:id="@+id/editButton"
-            android:layout_width="0dp"
-            android:layout_height="45dp"
-            android:layout_weight="1"
-            android:text="Editar"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@color/white"
-            android:background="@drawable/button_background"
-            android:layout_marginEnd="4dp" />
-
-        <Button
-                android:id="@+id/cancelButton"
-                android:layout_width="0dp"
-                android:layout_height="45dp"
-                android:layout_weight="1"
-                android:text="Cancelar"
-                android:textSize="@dimen/text_size_small"
-                android:textColor="@color/white"
-                android:background="@drawable/button_background"
-                android:layout_marginEnd="4dp"
-                android:visibility="gone" />
-
-        <Button
-            android:id="@+id/saveButton"
-            android:layout_width="0dp"
-            android:layout_height="45dp"
-            android:layout_weight="1"
-            android:text="Guardar"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@color/white"
-            android:background="@drawable/button_background"
-            android:layout_marginEnd="4dp"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/resetButton"
-            android:layout_width="0dp"
-            android:layout_height="45dp"
-            android:layout_weight="1"
-            android:text="Reset"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@color/white"
-            android:background="@drawable/button_background"
-            android:layout_marginEnd="4dp"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/exportButton"
-            android:layout_width="0dp"
-            android:layout_height="45dp"
-            android:layout_weight="1"
-            android:text="Exportar"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@color/white"
-            android:background="@drawable/button_background"
-            android:layout_marginEnd="4dp"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/importButton"
-            android:layout_width="0dp"
-            android:layout_height="45dp"
-            android:layout_weight="1"
-            android:text="Importar"
-            android:textSize="@dimen/text_size_small"
-            android:textColor="@color/white"
-            android:background="@drawable/button_background"
-            android:visibility="gone" />
-
-    </LinearLayout>
-
-    <!-- Service Content Layout -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@+id/editModeControls"
-        app:layout_constraintBottom_toTopOf="@+id/editControlsPanel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/serviceContainer"
+    <!-- App Bar -->
+    <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/input_card"
-            android:padding="16dp"
-            android:layout_margin="8dp"
-            android:elevation="4dp">
+            app:liftOnScroll="true">
 
-            <!-- Service Image -->
-            <ImageView
-                android:id="@+id/serviceImage"
-                android:layout_width="@dimen/image_size"
-                android:layout_height="@dimen/image_size"
-                android:layout_marginTop="20dp"
-                android:src="@drawable/tigo_cuadrado"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:scaleType="fitCenter"
-                android:background="#00FFFFFF"
-                android:elevation="2dp" />
+        <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:title="Servicio"
+                app:navigationIcon="@drawable/ic_arrow_back" />
 
-            <!-- Service Title -->
-            <TextView
-                android:id="@+id/serviceTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Giros Tigo"
-                android:textColor="@color/black"
-                android:textSize="@dimen/text_size_large"
-                android:textStyle="bold"
-                android:fontFamily="@font/bevan_italic"
-                android:gravity="center"
-                android:elevation="1dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/serviceImage" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-            <!-- Phone Label -->
-            <TextView
-                android:id="@+id/phoneLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/textview_height"
-                android:layout_marginTop="28dp"
-                android:gravity="center"
-                android:text="Ingrese el numero de celular"
-                android:textColor="@color/black"
-                android:textSize="@dimen/text_size_medium"
-                android:textStyle="bold"
-                android:fontFamily="serif"
-                android:padding="8dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/serviceTitle" />
+    <!-- Main Content -->
+    <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:fillViewport="true">
 
-            <!-- Phone Input -->
-            <EditText
-                android:id="@+id/phoneInput"
-                android:layout_width="@dimen/edittext_width"
-                android:layout_height="@dimen/edittext_height"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/edittext_background"
-                android:gravity="center"
-                android:hint="09"
-                android:inputType="number"
-                android:maxLength="10"
-                android:textColor="@color/black"
-                android:textColorHint="@color/gray"
-                android:textSize="34sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:fontFamily="serif"
-                android:elevation="2dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/phoneLabel" />
-
-            <!-- Cedula Label -->
-            <TextView
-                android:id="@+id/cedulaLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/textview_height"
-                android:layout_marginTop="32dp"
-                android:gravity="center"
-                android:text="Ingrese el numero de cedula"
-                android:textColor="@color/black"
-                android:textSize="@dimen/text_size_medium"
-                android:textStyle="bold"
-                android:fontFamily="serif"
-                android:padding="8dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/phoneInput" />
-
-            <!-- Cedula Input -->
-            <EditText
-                android:id="@+id/cedulaInput"
-                android:layout_width="@dimen/edittext_width"
-                android:layout_height="@dimen/edittext_height"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/edittext_background"
-                android:gravity="center"
-                android:hint="Ingrese cédula"
-                android:inputType="number"
-                android:maxLength="12"
-                android:textColor="@color/black"
-                android:textColorHint="@color/gray"
-                android:textSize="34sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:fontFamily="serif"
-                android:elevation="2dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cedulaLabel" />
-
-            <!-- Amount Label -->
-            <TextView
-                android:id="@+id/amountLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/textview_height"
-                android:layout_marginTop="32dp"
-                android:gravity="center"
-                android:text="Ingrese el monto"
-                android:textColor="@color/black"
-                android:textSize="@dimen/text_size_medium"
-                android:textStyle="bold"
-                android:fontFamily="serif"
-                android:padding="8dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cedulaInput" />
-
-            <!-- Amount Input -->
-            <EditText
-                android:id="@+id/amountInput"
-                android:layout_width="@dimen/edittext_width"
-                android:layout_height="@dimen/edittext_height"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/edittext_background"
-                android:gravity="center"
-                android:hint="Ingrese monto"
-                android:inputType="number"
-                android:maxLength="10"
-                android:textColor="#0A590D"
-                android:textColorHint="@color/gray"
-                android:textSize="34sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:fontFamily="serif"
-                android:elevation="2dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/amountLabel" />
-
-            <!-- Date Label (for birth date service) -->
-            <TextView
-                android:id="@+id/dateLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/textview_height"
-                android:layout_marginTop="32dp"
-                android:gravity="center"
-                android:text="Ingrese fecha de nacimiento"
-                android:textColor="@color/black"
-                android:textSize="@dimen/text_size_medium"
-                android:textStyle="bold"
-                android:fontFamily="serif"
-                android:padding="8dp"
-                android:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cedulaInput" />
-
-            <!-- Date Input -->
-            <EditText
-                android:id="@+id/dateInput"
-                android:layout_width="@dimen/edittext_width"
-                android:layout_height="@dimen/edittext_height"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/edittext_background"
-                android:gravity="center"
-                android:hint="dd/mm/yyyy"
-                android:inputType="text"
-                android:digits="0123456789/"
-                android:maxLength="10"
-                android:textColor="#0A590D"
-                android:textColorHint="@color/gray"
-                android:textSize="34sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:fontFamily="serif"
-                android:elevation="2dp"
-                android:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/dateLabel" />
-
-            <!-- Control Buttons -->
-            <LinearLayout
-                android:id="@+id/controlButtons"
+        <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:padding="8dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/amountInput">
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <ImageButton
-                    android:id="@+id/decreaseButton"
-                    android:layout_width="65dp"
-                    android:layout_height="65dp"
-                    android:layout_marginEnd="20dp"
-                    android:background="#00FFFFFF"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/down"
-                    android:elevation="3dp" />
-
-                <ImageButton
-                    android:id="@+id/resetAmountButton"
-                    android:layout_width="65dp"
-                    android:layout_height="65dp"
-                    android:background="#00FFFFFF"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/deolver"
-                    android:elevation="3dp" />
-
-                <ImageButton
-                    android:id="@+id/increaseButton"
-                    android:layout_width="65dp"
-                    android:layout_height="65dp"
-                    android:layout_marginStart="20dp"
-                    android:background="#00FFFFFF"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/up"
-                    android:elevation="3dp" />
-
-            </LinearLayout>
-
-            <!-- Action Buttons -->
-            <LinearLayout
-                android:id="@+id/actionButtons"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:layout_marginBottom="16dp"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:padding="12dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/controlButtons">
-
-                <ImageButton
-                    android:id="@+id/infoButton"
-                    android:layout_width="105dp"
-                    android:layout_height="85dp"
-                    android:layout_marginEnd="36dp"
-                    android:background="#00FFFFFF"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/infoicon"
-                    android:elevation="3dp" />
+            <!-- Edit Mode Controls Card -->
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/editControlsCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardElevation="2dp"
+                    app:cardCornerRadius="12dp"
+                    app:strokeWidth="0dp">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="8dp">
-
-                    <TextView
-                        android:id="@+id/confirmLabel"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Confirmar"
-                        android:textAlignment="center"
-                        android:textStyle="bold"
-                        android:textSize="22sp"
-                        android:fontFamily="serif"
-                        android:textColor="@color/black"
-                        android:elevation="1dp" />
+                        android:padding="12dp">
 
-                    <ImageButton
-                        android:id="@+id/confirmButton"
-                        android:layout_width="100dp"
-                        android:layout_height="87dp"
-                        android:layout_marginTop="10dp"
-                        android:background="#00FFFFFF"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/check_symbol_in_green_button_free_png"
-                        android:elevation="3dp" />
+                    <com.google.android.material.button.MaterialButton
+                            android:id="@+id/editButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Editar Layout"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            app:icon="@drawable/ic_edit" />
+
+                    <!-- Hidden edit buttons -->
+                    <HorizontalScrollView
+                            android:id="@+id/editButtonsContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:visibility="gone"
+                            android:scrollbars="none">
+
+                        <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/cancelButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Cancelar"
+                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    android:layout_marginEnd="8dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/saveButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Guardar"
+                                    style="@style/Widget.Material3.Button"
+                                    android:layout_marginEnd="8dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/resetButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Reset"
+                                    style="@style/Widget.Material3.Button.TonalButton"
+                                    android:layout_marginEnd="8dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/exportButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Exportar"
+                                    style="@style/Widget.Material3.Button.TonalButton"
+                                    android:layout_marginEnd="8dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/importButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Importar"
+                                    style="@style/Widget.Material3.Button.TonalButton" />
+
+                        </LinearLayout>
+
+                    </HorizontalScrollView>
 
                 </LinearLayout>
 
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Service Content Card -->
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/serviceContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardElevation="4dp"
+                    app:cardCornerRadius="16dp"
+                    app:strokeWidth="0dp">
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="24dp">
+
+                    <!-- Service Header -->
+                    <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center_horizontal"
+                            android:layout_marginBottom="24dp">
+
+                        <com.google.android.material.card.MaterialCardView
+                                android:layout_width="120dp"
+                                android:layout_height="120dp"
+                                app:cardElevation="8dp"
+                                app:cardCornerRadius="60dp"
+                                app:strokeWidth="0dp">
+
+                            <ImageView
+                                    android:id="@+id/serviceImage"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:src="@drawable/tigo_cuadrado"
+                                    android:scaleType="centerCrop"
+                                    android:padding="20dp"
+                                    android:background="@color/md_theme_light_primaryContainer" />
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <TextView
+                                android:id="@+id/serviceTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:text="Giros Tigo"
+                                android:textAppearance="@style/TextAppearance.GenioTigo.Headline3"
+                                android:textColor="@color/md_theme_light_onSurface" />
+
+                    </LinearLayout>
+
+                    <!-- Input Fields -->
+                    <!-- Phone Input -->
+                    <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/phoneInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            app:startIconDrawable="@drawable/ic_phone"
+                            app:endIconMode="clear_text"
+                            app:hintAnimationEnabled="true"
+                            app:counterEnabled="true"
+                            app:counterMaxLength="10">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/phoneInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Número de teléfono"
+                                android:inputType="phone"
+                                android:maxLength="10" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Cedula Input -->
+                    <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/cedulaInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            app:startIconDrawable="@drawable/ic_badge"
+                            app:endIconMode="clear_text"
+                            app:hintAnimationEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/cedulaInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Número de cédula"
+                                android:inputType="number"
+                                android:maxLength="12" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Amount Input with controls -->
+                    <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/amountInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            app:startIconDrawable="@drawable/ic_money"
+                            app:suffixText="Gs."
+                            app:hintAnimationEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/amountInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Monto"
+                                android:inputType="number"
+                                android:maxLength="10" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Amount Control Buttons -->
+                    <LinearLayout
+                            android:id="@+id/amountControls"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center"
+                            android:layout_marginBottom="16dp">
+
+                        <com.google.android.material.button.MaterialButton
+                                android:id="@+id/decreaseButton"
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:layout_marginEnd="16dp"
+                                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                                app:icon="@drawable/ic_remove"
+                                app:iconSize="24dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                                android:id="@+id/resetAmountButton"
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                style="@style/Widget.Material3.Button.IconButton.Outlined"
+                                app:icon="@drawable/ic_reset"
+                                app:iconSize="24dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                                android:id="@+id/increaseButton"
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:layout_marginStart="16dp"
+                                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                                app:icon="@drawable/ic_add"
+                                app:iconSize="24dp" />
+
+                    </LinearLayout>
+
+                    <!-- Date Input (hidden by default) -->
+                    <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/dateInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:visibility="gone"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            app:startIconDrawable="@drawable/ic_calendar"
+                            app:endIconMode="clear_text"
+                            app:hintAnimationEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/dateInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Fecha de nacimiento"
+                                android:inputType="date"
+                                android:maxLength="10" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Action Buttons -->
+                    <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="24dp">
+
+                        <com.google.android.material.button.MaterialButton
+                                android:id="@+id/infoButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
+                                android:text="Info"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                app:icon="@drawable/ic_info" />
+
+                        <com.google.android.material.button.MaterialButton
+                                android:id="@+id/confirmButton"
+                                android:layout_width="0dp"
+                                android:layout_height="56dp"
+                                android:layout_weight="2"
+                                android:layout_marginStart="8dp"
+                                android:text="Confirmar"
+                                style="@style/Widget.Material3.Button"
+                                app:icon="@drawable/ic_check" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Edit Controls Bottom Sheet -->
+    <com.google.android.material.card.MaterialCardView
+            android:id="@+id/editControlsPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:visibility="gone"
+            app:cardElevation="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardBackgroundColor="@color/md_theme_light_surface"
+            android:layout_margin="16dp">
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+            <TextView
+                    android:id="@+id/editControlsTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Editando: Componente"
+                    android:textAppearance="@style/TextAppearance.GenioTigo.Headline5"
+                    android:textColor="@color/md_theme_light_onSurface"
+                    android:gravity="center"
+                    android:layout_marginBottom="24dp" />
+
+            <!-- Scale Control -->
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Escala"
+                    android:textAppearance="@style/TextAppearance.GenioTigo.Caption"
+                    android:textColor="@color/md_theme_light_onSurfaceVariant" />
+
+            <com.google.android.material.slider.Slider
+                    android:id="@+id/scaleSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="0.5"
+                    android:valueTo="2.0"
+                    android:value="1.0"
+                    android:stepSize="0.1"
+                    app:labelBehavior="withinBounds" />
+
+            <!-- Text Size Control -->
+            <LinearLayout
+                    android:id="@+id/textSizeControl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone">
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tamaño de texto"
+                        android:textAppearance="@style/TextAppearance.GenioTigo.Caption"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant" />
+
+                <com.google.android.material.slider.Slider
+                        android:id="@+id/textSizeSlider"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="8"
+                        android:valueTo="48"
+                        android:value="16"
+                        android:stepSize="1"
+                        app:labelBehavior="withinBounds" />
+
             </LinearLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+            <!-- Letter Spacing Control -->
+            <LinearLayout
+                    android:id="@+id/letterSpacingControl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone">
 
-    </ScrollView>
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Espaciado entre letras"
+                        android:textAppearance="@style/TextAppearance.GenioTigo.Caption"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant" />
 
-    <!-- Edit Controls Panel -->
-    <LinearLayout
-        android:id="@+id/editControlsPanel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@drawable/input_card"
-        android:padding="16dp"
-        android:layout_margin="8dp"
-        android:elevation="8dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+                <com.google.android.material.slider.Slider
+                        android:id="@+id/letterSpacingSlider"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="0"
+                        android:valueTo="0.5"
+                        android:value="0"
+                        android:stepSize="0.01"
+                        app:labelBehavior="withinBounds" />
 
-        <TextView
-            android:id="@+id/editControlsTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Editando: Componente"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:gravity="center"
-            android:layout_marginBottom="16dp" />
+            </LinearLayout>
 
-        <!-- Scale Control -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
+            <!-- Apply/Cancel Buttons -->
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="24dp">
 
-            <TextView
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:text="Escala:"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:textStyle="bold" />
+                <com.google.android.material.button.MaterialButton
+                        android:id="@+id/cancelChangesButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="Cancelar"
+                        style="@style/Widget.Material3.Button.OutlinedButton" />
 
-            <SeekBar
-                android:id="@+id/scaleSeekBar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:max="100"
-                android:progress="50"
-                android:layout_marginHorizontal="12dp" />
+                <com.google.android.material.button.MaterialButton
+                        android:id="@+id/applyChangesButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Aplicar"
+                        style="@style/Widget.Material3.Button" />
 
-            <TextView
-                android:id="@+id/scaleValue"
-                android:layout_width="60dp"
-                android:layout_height="wrap_content"
-                android:text="1.0"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:textStyle="bold"
-                android:gravity="center" />
+            </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Text Size Control -->
-        <LinearLayout
-            android:id="@+id/textSizeControl"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:text="Tamaño:"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/textSizeSeekBar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:max="40"
-                android:progress="16"
-                android:layout_marginHorizontal="12dp" />
-
-            <TextView
-                android:id="@+id/textSizeValue"
-                android:layout_width="60dp"
-                android:layout_height="wrap_content"
-                android:text="16sp"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:textStyle="bold"
-                android:gravity="center" />
-
-        </LinearLayout>
-
-        <!-- Letter Spacing Control -->
-        <LinearLayout
-            android:id="@+id/letterSpacingControl"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:text="Espaciado:"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/letterSpacingSeekBar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:max="50"
-                android:progress="0"
-                android:layout_marginHorizontal="12dp" />
-
-            <TextView
-                android:id="@+id/letterSpacingValue"
-                android:layout_width="60dp"
-                android:layout_height="wrap_content"
-                android:text="0.0"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:textStyle="bold"
-                android:gravity="center" />
-
-        </LinearLayout>
-
-        <!-- Apply/Cancel Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/applyChangesButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Aplicar"
-                android:textColor="@color/white"
-                android:background="@drawable/button_background"
-                android:layout_marginEnd="8dp" />
-
-            <Button
-                android:id="@+id/cancelChangesButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Cancelar"
-                android:textColor="@color/white"
-                android:background="@drawable/button_background"
-                android:layout_marginStart="8dp" />
-
-        </LinearLayout>
-
-    </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Edit Mode Overlay -->
     <View
-        android:id="@+id/editModeOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#40000000"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+            android:id="@+id/editModeOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black_overlay_light"
+            android:visibility="gone" />
 
     <!-- Component Selection Indicator -->
     <View
-        android:id="@+id/selectionIndicator"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@drawable/button_background"
-        android:alpha="0.5"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+            android:id="@+id/selectionIndicator"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/selection_indicator"
+            android:visibility="gone" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
