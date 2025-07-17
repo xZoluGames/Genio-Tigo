@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/gradient_background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/default_padding">
+
+        <!-- Time Filter -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@android:color/white">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Filtrar por período"
+                    android:textSize="@dimen/text_size_medium"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:id="@+id/timeFilterLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/todayButton"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/button_height"
+                        android:layout_weight="1"
+                        android:layout_margin="2dp"
+                        android:text="Hoy"
+                        android:textSize="@dimen/text_size_small"
+                        android:textColor="@color/white"
+                        android:background="@drawable/button_background" />
+
+                    <Button
+                        android:id="@+id/weekButton"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/button_height"
+                        android:layout_weight="1"
+                        android:layout_margin="2dp"
+                        android:text="Semana"
+                        android:textSize="@dimen/text_size_small"
+                        android:textColor="@color/white"
+                        android:background="@drawable/button_background" />
+
+                    <Button
+                        android:id="@+id/monthButton"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/button_height"
+                        android:layout_weight="1"
+                        android:layout_margin="2dp"
+                        android:text="Mes"
+                        android:textSize="@dimen/text_size_small"
+                        android:textColor="@color/white"
+                        android:background="@drawable/button_background" />
+
+                    <Button
+                        android:id="@+id/yearButton"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/button_height"
+                        android:layout_weight="1"
+                        android:layout_margin="2dp"
+                        android:text="Año"
+                        android:textSize="@dimen/text_size_small"
+                        android:textColor="@color/white"
+                        android:background="@drawable/button_background" />
+
+                    <Button
+                        android:id="@+id/allTimeButton"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/button_height"
+                        android:layout_weight="1"
+                        android:layout_margin="2dp"
+                        android:text="Todo"
+                        android:textSize="@dimen/text_size_small"
+                        android:textColor="@color/white"
+                        android:background="@drawable/button_background" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Summary Cards Grid -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- First row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Total Transactions Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total Transacciones"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/totalTransactionsText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="@dimen/text_size_large"
+                            android:textStyle="bold"
+                            android:textColor="@color/success_green" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <!-- Total Amount Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Monto Total"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/totalAmountText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 Gs."
+                            android:textSize="@dimen/text_size_medium"
+                            android:textStyle="bold"
+                            android:textColor="@color/success_green" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+            <!-- Second row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Average Amount Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Promedio"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/averageAmountText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 Gs."
+                            android:textSize="@dimen/text_size_medium"
+                            android:textStyle="bold"
+                            android:textColor="@color/info_blue" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <!-- Success Rate Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tasa de Éxito"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/successRateText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0%"
+                            android:textSize="@dimen/text_size_medium"
+                            android:textStyle="bold"
+                            android:textColor="@color/warning_orange" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+            <!-- Third row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Most Used Service Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Servicio Más Usado"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/mostUsedServiceText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="N/A"
+                            android:textSize="@dimen/text_size_small"
+                            android:textStyle="bold"
+                            android:textColor="@color/accent_purple" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <!-- Daily Average Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Promedio Diario"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/dailyAverageText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="@dimen/text_size_medium"
+                            android:textStyle="bold"
+                            android:textColor="@color/info_blue" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+            <!-- Fourth row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Total Commission Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Comisión Total"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/totalCommissionText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 Gs."
+                            android:textSize="@dimen/text_size_medium"
+                            android:textStyle="bold"
+                            android:textColor="@color/error_red" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <!-- Peak Hour Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Hora Pico"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/peakHourText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0:00"
+                            android:textSize="@dimen/text_size_medium"
+                            android:textStyle="bold"
+                            android:textColor="@color/warning_orange" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Services Chart -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@android:color/white">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Servicios Más Usados"
+                    android:textSize="@dimen/text_size_medium"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="Gráfico de servicios\n(Próximamente)"
+                    android:gravity="center"
+                    android:textSize="@dimen/text_size_medium"
+                    android:textColor="@color/gray" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Monthly Chart -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@android:color/white">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Transacciones por Mes"
+                    android:textSize="@dimen/text_size_medium"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="Gráfico mensual\n(Próximamente)"
+                    android:gravity="center"
+                    android:textSize="@dimen/text_size_medium"
+                    android:textColor="@color/gray" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+</ScrollView>

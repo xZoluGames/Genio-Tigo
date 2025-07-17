@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="Apariencia">
+
+        <ListPreference
+            android:key="theme"
+            android:title="Tema"
+            android:summary="Selecciona el tema de la aplicación"
+            android:entries="@array/theme_entries"
+            android:entryValues="@array/theme_values"
+            android:defaultValue="2"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="layout_customization"
+            android:title="Personalizar Layout"
+            android:summary="Ajustar tamaños y espaciados de la interfaz"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Comportamiento">
+
+        <SwitchPreferenceCompat
+            android:key="auto_print"
+            android:title="Impresión automática"
+            android:summary="Imprimir automáticamente al encontrar referencias"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="sound_enabled"
+            android:title="Sonidos"
+            android:summary="Reproducir sonidos en las acciones"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="vibration_enabled"
+            android:title="Vibración"
+            android:summary="Vibrar en las acciones importantes"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:key="default_sim"
+            android:title="SIM predeterminada"
+            android:summary="Selecciona la SIM para las llamadas"
+            android:entries="@array/sim_entries"
+            android:entryValues="@array/sim_values"
+            android:defaultValue="0"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Datos">
+
+        <ListPreference
+            android:key="export_format"
+            android:title="Formato de exportación"
+            android:summary="Formato predeterminado para exportar"
+            android:entries="@array/export_entries"
+            android:entryValues="@array/export_values"
+            android:defaultValue="0"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="export_data"
+            android:title="Exportar historial"
+            android:summary="Exportar el historial de transacciones"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="backup_enabled"
+            android:title="Respaldo automático"
+            android:summary="Crear respaldos automáticos diariamente"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="last_backup"
+            android:title="Último respaldo"
+            android:summary="Sin respaldos"
+            android:enabled="false"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="manual_backup"
+            android:title="Crear respaldo ahora"
+            android:summary="Crear un respaldo manual"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="restore_backup"
+            android:title="Restaurar respaldo"
+            android:summary="Restaurar desde un archivo de respaldo"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="clear_data"
+            android:title="Borrar todos los datos"
+            android:summary="Eliminar todo el historial y configuración"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Dispositivos">
+
+        <Preference
+            android:key="configure_bluetooth"
+            android:title="Configurar Bluetooth"
+            android:summary="Seleccionar impresora Bluetooth"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Información">
+
+        <Preference
+            android:key="about"
+            android:title="Acerca de"
+            android:summary="Información de la aplicación"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,0 +1,604 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/gradient_background"
+    android:padding="@dimen/default_padding">
+
+    <!-- Edit Mode Controls -->
+    <LinearLayout
+        android:id="@+id/editModeControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/editButton"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:layout_weight="1"
+            android:text="Editar"
+            android:textSize="@dimen/text_size_small"
+            android:textColor="@color/white"
+            android:background="@drawable/button_background"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+                android:id="@+id/cancelButton"
+                android:layout_width="0dp"
+                android:layout_height="45dp"
+                android:layout_weight="1"
+                android:text="Cancelar"
+                android:textSize="@dimen/text_size_small"
+                android:textColor="@color/white"
+                android:background="@drawable/button_background"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone" />
+
+        <Button
+            android:id="@+id/saveButton"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:layout_weight="1"
+            android:text="Guardar"
+            android:textSize="@dimen/text_size_small"
+            android:textColor="@color/white"
+            android:background="@drawable/button_background"
+            android:layout_marginEnd="4dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/resetButton"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:layout_weight="1"
+            android:text="Reset"
+            android:textSize="@dimen/text_size_small"
+            android:textColor="@color/white"
+            android:background="@drawable/button_background"
+            android:layout_marginEnd="4dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/exportButton"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:layout_weight="1"
+            android:text="Exportar"
+            android:textSize="@dimen/text_size_small"
+            android:textColor="@color/white"
+            android:background="@drawable/button_background"
+            android:layout_marginEnd="4dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/importButton"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:layout_weight="1"
+            android:text="Importar"
+            android:textSize="@dimen/text_size_small"
+            android:textColor="@color/white"
+            android:background="@drawable/button_background"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- Service Content Layout -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@+id/editModeControls"
+        app:layout_constraintBottom_toTopOf="@+id/editControlsPanel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/serviceContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/input_card"
+            android:padding="16dp"
+            android:layout_margin="8dp"
+            android:elevation="4dp">
+
+            <!-- Service Image -->
+            <ImageView
+                android:id="@+id/serviceImage"
+                android:layout_width="@dimen/image_size"
+                android:layout_height="@dimen/image_size"
+                android:layout_marginTop="20dp"
+                android:src="@drawable/tigo_cuadrado"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:scaleType="fitCenter"
+                android:background="#00FFFFFF"
+                android:elevation="2dp" />
+
+            <!-- Service Title -->
+            <TextView
+                android:id="@+id/serviceTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Giros Tigo"
+                android:textColor="@color/black"
+                android:textSize="@dimen/text_size_large"
+                android:textStyle="bold"
+                android:fontFamily="@font/bevan_italic"
+                android:gravity="center"
+                android:elevation="1dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/serviceImage" />
+
+            <!-- Phone Label -->
+            <TextView
+                android:id="@+id/phoneLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/textview_height"
+                android:layout_marginTop="28dp"
+                android:gravity="center"
+                android:text="Ingrese el numero de celular"
+                android:textColor="@color/black"
+                android:textSize="@dimen/text_size_medium"
+                android:textStyle="bold"
+                android:fontFamily="serif"
+                android:padding="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/serviceTitle" />
+
+            <!-- Phone Input -->
+            <EditText
+                android:id="@+id/phoneInput"
+                android:layout_width="@dimen/edittext_width"
+                android:layout_height="@dimen/edittext_height"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/edittext_background"
+                android:gravity="center"
+                android:hint="09"
+                android:inputType="number"
+                android:maxLength="10"
+                android:textColor="@color/black"
+                android:textColorHint="@color/gray"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:fontFamily="serif"
+                android:elevation="2dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/phoneLabel" />
+
+            <!-- Cedula Label -->
+            <TextView
+                android:id="@+id/cedulaLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/textview_height"
+                android:layout_marginTop="32dp"
+                android:gravity="center"
+                android:text="Ingrese el numero de cedula"
+                android:textColor="@color/black"
+                android:textSize="@dimen/text_size_medium"
+                android:textStyle="bold"
+                android:fontFamily="serif"
+                android:padding="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/phoneInput" />
+
+            <!-- Cedula Input -->
+            <EditText
+                android:id="@+id/cedulaInput"
+                android:layout_width="@dimen/edittext_width"
+                android:layout_height="@dimen/edittext_height"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/edittext_background"
+                android:gravity="center"
+                android:hint="Ingrese cédula"
+                android:inputType="number"
+                android:maxLength="12"
+                android:textColor="@color/black"
+                android:textColorHint="@color/gray"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:fontFamily="serif"
+                android:elevation="2dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/cedulaLabel" />
+
+            <!-- Amount Label -->
+            <TextView
+                android:id="@+id/amountLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/textview_height"
+                android:layout_marginTop="32dp"
+                android:gravity="center"
+                android:text="Ingrese el monto"
+                android:textColor="@color/black"
+                android:textSize="@dimen/text_size_medium"
+                android:textStyle="bold"
+                android:fontFamily="serif"
+                android:padding="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/cedulaInput" />
+
+            <!-- Amount Input -->
+            <EditText
+                android:id="@+id/amountInput"
+                android:layout_width="@dimen/edittext_width"
+                android:layout_height="@dimen/edittext_height"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/edittext_background"
+                android:gravity="center"
+                android:hint="Ingrese monto"
+                android:inputType="number"
+                android:maxLength="10"
+                android:textColor="#0A590D"
+                android:textColorHint="@color/gray"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:fontFamily="serif"
+                android:elevation="2dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/amountLabel" />
+
+            <!-- Date Label (for birth date service) -->
+            <TextView
+                android:id="@+id/dateLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/textview_height"
+                android:layout_marginTop="32dp"
+                android:gravity="center"
+                android:text="Ingrese fecha de nacimiento"
+                android:textColor="@color/black"
+                android:textSize="@dimen/text_size_medium"
+                android:textStyle="bold"
+                android:fontFamily="serif"
+                android:padding="8dp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/cedulaInput" />
+
+            <!-- Date Input -->
+            <EditText
+                android:id="@+id/dateInput"
+                android:layout_width="@dimen/edittext_width"
+                android:layout_height="@dimen/edittext_height"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/edittext_background"
+                android:gravity="center"
+                android:hint="dd/mm/yyyy"
+                android:inputType="text"
+                android:digits="0123456789/"
+                android:maxLength="10"
+                android:textColor="#0A590D"
+                android:textColorHint="@color/gray"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:fontFamily="serif"
+                android:elevation="2dp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/dateLabel" />
+
+            <!-- Control Buttons -->
+            <LinearLayout
+                android:id="@+id/controlButtons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:padding="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/amountInput">
+
+                <ImageButton
+                    android:id="@+id/decreaseButton"
+                    android:layout_width="65dp"
+                    android:layout_height="65dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="#00FFFFFF"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/down"
+                    android:elevation="3dp" />
+
+                <ImageButton
+                    android:id="@+id/resetAmountButton"
+                    android:layout_width="65dp"
+                    android:layout_height="65dp"
+                    android:background="#00FFFFFF"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/deolver"
+                    android:elevation="3dp" />
+
+                <ImageButton
+                    android:id="@+id/increaseButton"
+                    android:layout_width="65dp"
+                    android:layout_height="65dp"
+                    android:layout_marginStart="20dp"
+                    android:background="#00FFFFFF"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/up"
+                    android:elevation="3dp" />
+
+            </LinearLayout>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:id="@+id/actionButtons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:padding="12dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/controlButtons">
+
+                <ImageButton
+                    android:id="@+id/infoButton"
+                    android:layout_width="105dp"
+                    android:layout_height="85dp"
+                    android:layout_marginEnd="36dp"
+                    android:background="#00FFFFFF"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/infoicon"
+                    android:elevation="3dp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:id="@+id/confirmLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Confirmar"
+                        android:textAlignment="center"
+                        android:textStyle="bold"
+                        android:textSize="22sp"
+                        android:fontFamily="serif"
+                        android:textColor="@color/black"
+                        android:elevation="1dp" />
+
+                    <ImageButton
+                        android:id="@+id/confirmButton"
+                        android:layout_width="100dp"
+                        android:layout_height="87dp"
+                        android:layout_marginTop="10dp"
+                        android:background="#00FFFFFF"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/check_symbol_in_green_button_free_png"
+                        android:elevation="3dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </ScrollView>
+
+    <!-- Edit Controls Panel -->
+    <LinearLayout
+        android:id="@+id/editControlsPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/input_card"
+        android:padding="16dp"
+        android:layout_margin="8dp"
+        android:elevation="8dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/editControlsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Editando: Componente"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Scale Control -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:text="Escala:"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/scaleSeekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="100"
+                android:progress="50"
+                android:layout_marginHorizontal="12dp" />
+
+            <TextView
+                android:id="@+id/scaleValue"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:text="1.0"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- Text Size Control -->
+        <LinearLayout
+            android:id="@+id/textSizeControl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:text="Tamaño:"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/textSizeSeekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="40"
+                android:progress="16"
+                android:layout_marginHorizontal="12dp" />
+
+            <TextView
+                android:id="@+id/textSizeValue"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:text="16sp"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- Letter Spacing Control -->
+        <LinearLayout
+            android:id="@+id/letterSpacingControl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:text="Espaciado:"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/letterSpacingSeekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="50"
+                android:progress="0"
+                android:layout_marginHorizontal="12dp" />
+
+            <TextView
+                android:id="@+id/letterSpacingValue"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:text="0.0"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- Apply/Cancel Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/applyChangesButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Aplicar"
+                android:textColor="@color/white"
+                android:background="@drawable/button_background"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/cancelChangesButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Cancelar"
+                android:textColor="@color/white"
+                android:background="@drawable/button_background"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Edit Mode Overlay -->
+    <View
+        android:id="@+id/editModeOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#40000000"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Component Selection Indicator -->
+    <View
+        android:id="@+id/selectionIndicator"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/button_background"
+        android:alpha="0.5"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

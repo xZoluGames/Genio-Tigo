@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        package="com.example.geniotecni.tigo">
+
+    <uses-feature
+            android:name="android.hardware.telephony"
+            android:required="false" />
+
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- Bluetooth para Android < 12 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Notificaciones para Android 13+ -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <application
+            android:name=".GenioTecniApplication"
+            android:allowBackup="true"
+            android:icon="@drawable/ic_icgeniotecni_round"
+            android:label="@string/app_name"
+            android:roundIcon="@drawable/ic_icgeniotecni_round"
+            android:supportsRtl="true"
+            android:theme="@style/AppTheme"
+            tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".ui.activities.SearchServices" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity android:name=".ui.activities.MainActivity" android:exported="false"/>
+        <activity android:name=".ui.activities.Bt" android:exported="false"/>
+        <activity android:name=".ui.activities.PrintHistoryActivity" android:exported="false"/>
+        
+        <activity
+            android:name=".ui.activities.StatisticsActivity"
+            android:label="Estadísticas"
+            android:parentActivityName=".ui.activities.SearchServices"
+            android:theme="@style/AppTheme.WithActionBar"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.activities.SettingsActivity"
+            android:label="Configuración"
+            android:parentActivityName=".ui.activities.SearchServices"
+            android:theme="@style/AppTheme.WithActionBar"
+            android:exported="false"/>
+
+        
+        <!-- File Provider para compartir archivos -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        
+        <meta-data
+                android:name="preloaded_fonts"
+                android:resource="@array/preloaded_fonts" />
+
+    </application>
+</manifest>

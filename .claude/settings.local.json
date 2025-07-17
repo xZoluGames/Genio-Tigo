@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(rmdir:*)",
+      "Bash(./gradlew:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(touch:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(kotlinc:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": []
+  }
+}
