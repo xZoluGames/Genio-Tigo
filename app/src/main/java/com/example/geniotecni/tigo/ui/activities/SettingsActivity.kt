@@ -1,78 +1,74 @@
 package com.example.geniotecni.tigo.ui.activities
 
+import android.app.AlertDialog
 import android.content.Intent
-import android.health.connect.datatypes.units.Length
 import android.os.Bundle
-import android.view.MenuItem
-import androidx.appcompat.app.AlertDialog
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.ListPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreferenceCompat
-import com.example.geniotecni.tigo.ui.activities.Bt
+import androidx.preference.*
 import com.example.geniotecni.tigo.R
 import com.example.geniotecni.tigo.helpers.BackupHelper
 import com.example.geniotecni.tigo.helpers.ExportHelper
 import com.example.geniotecni.tigo.managers.PreferencesManager
+import com.example.geniotecni.tigo.managers.PrintDataManager
 import com.example.geniotecni.tigo.utils.showToast
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.*
-import android.widget.Toast
+
 class SettingsActivity : AppCompatActivity() {
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-        
+
         supportActionBar?.apply {
-            title = "Configuración"
             setDisplayHomeAsUpEnabled(true)
+            title = "Configuración"
         }
-        
-        supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.settings_container, SettingsFragment())
-            .commit()
-    }
-    
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressed()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+
+        if (savedInstanceState == null) {
+            supportFragmentManager
+                .beginTransaction()
+                .replace(R.id.settings_container, SettingsFragment())
+                .commit()
         }
     }
-    
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressed()
+        return true
+    }
+
     class SettingsFragment : PreferenceFragmentCompat() {
-        
+
         private lateinit var preferencesManager: PreferencesManager
         private lateinit var exportHelper: ExportHelper
         private lateinit var backupHelper: BackupHelper
-        
+        private lateinit var printDataManager: PrintDataManager
+
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.preferences, rootKey)
-            
+
             preferencesManager = PreferencesManager(requireContext())
             exportHelper = ExportHelper(requireContext())
             backupHelper = BackupHelper(requireContext())
-            
+            printDataManager = PrintDataManager(requireContext())
+
             setupPreferences()
         }
-        
+
         private fun setupPreferences() {
             // Theme preference
-            findPreference<ListPreference>("theme")?.apply {
+            findPreference<ListPreference>("app_theme")?.apply {
                 value = preferencesManager.appTheme.toString()
                 setOnPreferenceChangeListener { _, newValue ->
-                    val theme = newValue.toString().toInt()
+                    val theme = (newValue as String).toInt()
                     preferencesManager.appTheme = theme
                     true
                 }
             }
-            
+
             // Auto print
             findPreference<SwitchPreferenceCompat>("auto_print")?.apply {
                 isChecked = preferencesManager.autoPrint
@@ -81,8 +77,8 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
             }
-            
-            // Sound
+
+            // Sound enabled
             findPreference<SwitchPreferenceCompat>("sound_enabled")?.apply {
                 isChecked = preferencesManager.soundEnabled
                 setOnPreferenceChangeListener { _, newValue ->
@@ -90,8 +86,8 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
             }
-            
-            // Vibration
+
+            // Vibration enabled
             findPreference<SwitchPreferenceCompat>("vibration_enabled")?.apply {
                 isChecked = preferencesManager.vibrationEnabled
                 setOnPreferenceChangeListener { _, newValue ->
@@ -99,105 +95,103 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
             }
-            
+
             // Default SIM
             findPreference<ListPreference>("default_sim")?.apply {
                 value = preferencesManager.defaultSim.toString()
                 setOnPreferenceChangeListener { _, newValue ->
-                    preferencesManager.defaultSim = newValue.toString().toInt()
+                    preferencesManager.defaultSim = (newValue as String).toInt()
                     true
                 }
             }
-            
-            // Export format
-            findPreference<ListPreference>("export_format")?.apply {
-                value = preferencesManager.exportFormat.toString()
-                setOnPreferenceChangeListener { _, newValue ->
-                    preferencesManager.exportFormat = newValue.toString().toInt()
-                    true
-                }
-            }
-            
+
             // Export data
             findPreference<Preference>("export_data")?.setOnPreferenceClickListener {
                 showExportDialog()
                 true
             }
-            
-            // Backup
+
+            // Backup settings
             findPreference<SwitchPreferenceCompat>("backup_enabled")?.apply {
                 isChecked = preferencesManager.backupEnabled
                 setOnPreferenceChangeListener { _, newValue ->
                     preferencesManager.backupEnabled = newValue as Boolean
-                    if (newValue as Boolean) {
-                        backupHelper.performBackup()
-                    }
                     true
                 }
             }
-            
-            // Last backup info
-            findPreference<Preference>("last_backup")?.apply {
-                val lastBackup = preferencesManager.lastBackupTime
-                summary = if (lastBackup > 0) {
-                    val date = Date(lastBackup)
-                    val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                    "Último respaldo: ${format.format(date)}"
-                } else {
-                    "Sin respaldos"
-                }
-            }
-            
+
             // Manual backup
-            findPreference<Preference>("manual_backup")?.setOnPreferenceClickListener {
-                performManualBackup()
-                true
+            findPreference<Preference>("manual_backup")?.apply {
+                setOnPreferenceClickListener {
+                    performManualBackup()
+                    true
+                }
+                updateLastBackupSummary()
             }
-            
+
             // Restore backup
             findPreference<Preference>("restore_backup")?.setOnPreferenceClickListener {
                 showRestoreDialog()
                 true
             }
-            
-            // Configure Bluetooth
-            findPreference<Preference>("configure_bluetooth")?.setOnPreferenceClickListener {
-                startActivity(Intent(requireContext(), Bt::class.java))
-                true
-            }
-            
-            // Layout Customization
+
+            // Layout customization
             findPreference<Preference>("layout_customization")?.setOnPreferenceClickListener {
-                Toast.makeText(context,"La personalización de layout ahora está integrada en el modo de edición. Usa el botón 'Editar' en la pantalla principal.", Toast.LENGTH_SHORT).show()
+                requireContext().showToast("Usa el botón 'Editar' en la pantalla principal")
                 true
             }
-            
+
             // Clear data
             findPreference<Preference>("clear_data")?.setOnPreferenceClickListener {
                 showClearDataDialog()
                 true
             }
-            
+
             // About
             findPreference<Preference>("about")?.setOnPreferenceClickListener {
                 showAboutDialog()
                 true
             }
+
+            // Privacy policy
+            findPreference<Preference>("privacy_policy")?.setOnPreferenceClickListener {
+                showPrivacyPolicy()
+                true
+            }
         }
-        
+
+        private fun updateLastBackupSummary() {
+            findPreference<Preference>("manual_backup")?.apply {
+                val lastBackup = preferencesManager.lastBackupTime
+                summary = if (lastBackup > 0) {
+                    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                    "Último respaldo: ${dateFormat.format(Date(lastBackup))}"
+                } else {
+                    "Nunca se ha realizado un respaldo"
+                }
+            }
+        }
+
         private fun showExportDialog() {
             val options = arrayOf("CSV", "PDF", "Ambos")
             val selected = preferencesManager.exportFormat
-            
-            AlertDialog.Builder(requireContext())
+
+            MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Exportar historial")
                 .setSingleChoiceItems(options, selected) { dialog, which ->
                     when (which) {
-                        0 -> exportHelper.exportToCSV(true)
-                        1 -> exportHelper.exportToPDF(true)
+                        0 -> {
+                            exportHelper.exportToCSV(true)
+                            preferencesManager.exportFormat = 0
+                        }
+                        1 -> {
+                            exportHelper.exportToPDF(true)
+                            preferencesManager.exportFormat = 1
+                        }
                         2 -> {
                             exportHelper.exportToCSV(false)
                             exportHelper.exportToPDF(true)
+                            preferencesManager.exportFormat = 2
                         }
                     }
                     dialog.dismiss()
@@ -205,7 +199,7 @@ class SettingsActivity : AppCompatActivity() {
                 .setNegativeButton("Cancelar", null)
                 .show()
         }
-        
+
         private fun performManualBackup() {
             if (backupHelper.performBackup()) {
                 requireContext().showToast("Respaldo creado exitosamente")
@@ -214,26 +208,77 @@ class SettingsActivity : AppCompatActivity() {
                 requireContext().showToast("Error al crear respaldo")
             }
         }
-        
+
         private fun showRestoreDialog() {
-            // TODO: Implement file picker for backup restoration
-            requireContext().showToast("Función en desarrollo")
-        }
-        
-        private fun showClearDataDialog() {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Borrar todos los datos")
-                .setMessage("¿Estás seguro? Esta acción no se puede deshacer.")
-                .setPositiveButton("Borrar") { _, _ ->
-                    // TODO: Implement data clearing
-                    requireContext().showToast("Datos borrados")
+            val backupFiles = backupHelper.getAvailableBackups()
+
+            if (backupFiles.isEmpty()) {
+                requireContext().showToast("No hay respaldos disponibles")
+                return
+            }
+
+            val fileNames = backupFiles.map {
+                val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                "Respaldo del ${dateFormat.format(Date(it.lastModified()))}"
+            }.toTypedArray()
+
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Seleccionar respaldo")
+                .setItems(fileNames) { _, which ->
+                    restoreBackup(backupFiles[which])
                 }
                 .setNegativeButton("Cancelar", null)
                 .show()
         }
-        
+
+        private fun restoreBackup(file: java.io.File) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Restaurar respaldo")
+                .setMessage("¿Estás seguro? Esto reemplazará todos los datos actuales.")
+                .setPositiveButton("Restaurar") { _, _ ->
+                    if (backupHelper.restoreBackup(file)) {
+                        requireContext().showToast("Respaldo restaurado exitosamente")
+                        // Restart app to apply changes
+                        val intent = requireContext().packageManager
+                            .getLaunchIntentForPackage(requireContext().packageName)
+                        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        if (intent != null) {
+                            startActivity(intent)
+                        }
+                        requireActivity().finish()
+                    } else {
+                        requireContext().showToast("Error al restaurar respaldo")
+                    }
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
+
+        private fun showClearDataDialog() {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Borrar todos los datos")
+                .setMessage("¿Estás seguro? Esta acción no se puede deshacer.\n\nSe borrarán:\n• Historial de transacciones\n• Estadísticas\n• Configuraciones personalizadas")
+                .setPositiveButton("Borrar") { _, _ ->
+                    // Clear all data
+                    printDataManager.clearAllData()
+                    preferencesManager.clearAll()
+                    requireContext().showToast("Todos los datos han sido borrados")
+
+                    // Restart app
+                    val intent = requireContext().packageManager
+                        .getLaunchIntentForPackage(requireContext().packageName)
+                    intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    if (intent != null) {
+                        startActivity(intent)
+                    }
+                    requireActivity().finish()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
+
         private fun showAboutDialog() {
-            AlertDialog.Builder(requireContext())
+            MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Acerca de")
                 .setMessage("""
                     Genio Tecni
@@ -243,22 +288,27 @@ class SettingsActivity : AppCompatActivity() {
                     de servicios financieros en Paraguay.
                     
                     © 2024 Genio Tecni
+                    Todos los derechos reservados
                 """.trimIndent())
-                .setPositiveButton("OK", null)
+                .setPositiveButton("Aceptar", null)
                 .show()
         }
-        
-        private fun updateLastBackupSummary() {
-            findPreference<Preference>("last_backup")?.apply {
-                val lastBackup = preferencesManager.lastBackupTime
-                summary = if (lastBackup > 0) {
-                    val date = Date(lastBackup)
-                    val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                    "Último respaldo: ${format.format(date)}"
-                } else {
-                    "Sin respaldos"
-                }
-            }
+
+        private fun showPrivacyPolicy() {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Política de Privacidad")
+                .setMessage("""
+                    Tu privacidad es importante para nosotros.
+                    
+                    • No compartimos tus datos personales
+                    • Toda la información se almacena localmente
+                    • No se requiere conexión a internet
+                    • Tú tienes el control total de tus datos
+                    
+                    Para más información, visita nuestra página web.
+                """.trimIndent())
+                .setPositiveButton("Aceptar", null)
+                .show()
         }
     }
 }

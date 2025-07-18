@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Apariencia -->
+    <PreferenceCategory app:title="Apariencia">
+
+        <ListPreference
+                app:key="app_theme"
+                app:title="Tema de la aplicación"
+                app:summary="%s"
+                app:entries="@array/theme_entries"
+                app:entryValues="@array/theme_values"
+                app:defaultValue="2"
+                app:icon="@drawable/ic_palette" />
+
+        <Preference
+                app:key="layout_customization"
+                app:title="Personalización de diseño"
+                app:summary="Editar la apariencia de los componentes"
+                app:icon="@drawable/ic_edit" />
+
+    </PreferenceCategory>
+
+    <!-- Comportamiento -->
+    <PreferenceCategory app:title="Comportamiento">
+
+        <SwitchPreferenceCompat
+                app:key="auto_print"
+                app:title="Impresión automática"
+                app:summary="Imprimir automáticamente después de procesar"
+                app:defaultValue="false"
+                app:icon="@drawable/ic_print" />
+
+        <SwitchPreferenceCompat
+                app:key="sound_enabled"
+                app:title="Sonidos"
+                app:summary="Reproducir sonidos en las acciones"
+                app:defaultValue="true"
+                app:icon="@drawable/ic_volume" />
+
+        <SwitchPreferenceCompat
+                app:key="vibration_enabled"
+                app:title="Vibración"
+                app:summary="Vibrar en las acciones importantes"
+                app:defaultValue="true"
+                app:icon="@drawable/ic_vibration" />
+
+        <ListPreference
+                app:key="default_sim"
+                app:title="SIM predeterminada"
+                app:summary="%s"
+                app:entries="@array/sim_entries"
+                app:entryValues="@array/sim_values"
+                app:defaultValue="0"
+                app:icon="@drawable/ic_sim_card" />
+
+    </PreferenceCategory>
+
+    <!-- Datos -->
+    <PreferenceCategory app:title="Datos">
+
+        <Preference
+                app:key="export_data"
+                app:title="Exportar historial"
+                app:summary="Exportar transacciones a CSV o PDF"
+                app:icon="@drawable/ic_download" />
+
+        <SwitchPreferenceCompat
+                app:key="backup_enabled"
+                app:title="Respaldo automático"
+                app:summary="Crear respaldos automáticos diarios"
+                app:defaultValue="false"
+                app:icon="@drawable/ic_backup" />
+
+        <Preference
+                app:key="manual_backup"
+                app:title="Respaldo manual"
+                app:summary="Crear un respaldo ahora"
+                app:icon="@drawable/ic_save" />
+
+        <Preference
+                app:key="restore_backup"
+                app:title="Restaurar respaldo"
+                app:summary="Restaurar desde un respaldo anterior"
+                app:icon="@drawable/ic_restore" />
+
+        <Preference
+                app:key="clear_data"
+                app:title="Borrar todos los datos"
+                app:summary="Eliminar historial y configuraciones"
+                app:icon="@drawable/ic_delete_forever" />
+
+    </PreferenceCategory>
+
+    <!-- Información -->
+    <PreferenceCategory app:title="Información">
+
+        <Preference
+                app:key="about"
+                app:title="Acerca de"
+                app:summary="Información sobre la aplicación"
+                app:icon="@drawable/ic_info" />
+
+        <Preference
+                app:key="privacy_policy"
+                app:title="Política de privacidad"
+                app:summary="Cómo manejamos tus datos"
+                app:icon="@drawable/ic_privacy" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
