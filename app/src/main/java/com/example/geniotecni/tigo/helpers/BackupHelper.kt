@@ -166,7 +166,7 @@ class BackupHelper(private val context: Context) {
                 "totalTransactions" to transactionDao.getTransactionCount(),
                 "totalAmount" to (transactionDao.getTotalAmount() ?: 0L),
                 "totalCommission" to (transactionDao.getTotalCommission() ?: 0L),
-                "mostUsedService" to (transactionDao.getMostUsedService()?.service ?: "N/A")
+                "mostUsedService" to (transactionDao.getMostUsedServiceName() ?: "N/A")
             )
         }
     }

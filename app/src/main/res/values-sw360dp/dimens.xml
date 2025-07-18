@@ -7,7 +7,7 @@
     <dimen name="button_height">55dp</dimen>
     <dimen name="edittext_height">55dp</dimen>
     <dimen name="textview_height">30dp</dimen>
-    <dimen name="image_size">100dp</dimen>
+    <dimen name="image_size">80dp</dimen>
     <dimen name="button_width">280dp</dimen>
     <dimen name="edittext_width">280dp</dimen>
     <dimen name="textview_width">280dp</dimen>

@@ -1,15 +1,13 @@
 package com.example.geniotecni.tigo.data.converters
 
-import androidx.room.TypeConverter
 import java.util.Date
 
+// Simplified date converter without Room annotations
 class DateConverter {
-    @TypeConverter
     fun fromTimestamp(value: Long?): Date? {
         return value?.let { Date(it) }
     }
 
-    @TypeConverter
     fun dateToTimestamp(date: Date?): Long? {
         return date?.time
     }

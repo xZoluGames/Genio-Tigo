@@ -10,41 +10,39 @@ import java.util.*
 
 class TransactionRepository(private val transactionDao: TransactionDao) {
 
-    fun getAllTransactions(): Flow<List<TransactionEntity>> = transactionDao.getAllTransactions()
+    fun getAllTransactions(): List<TransactionEntity> = transactionDao.getAllTransactions()
 
-    fun getTransactionsBetweenDates(startDate: Date, endDate: Date): Flow<List<TransactionEntity>> =
+    fun getTransactionsBetweenDates(startDate: Date, endDate: Date): List<TransactionEntity> =
         transactionDao.getTransactionsBetweenDates(startDate, endDate)
 
-    fun getTransactionsByService(service: String): Flow<List<TransactionEntity>> =
+    fun getTransactionsByService(service: String): List<TransactionEntity> =
         transactionDao.getTransactionsByService(service)
 
-    suspend fun insertTransaction(transaction: TransactionEntity): Long =
+    fun insertTransaction(transaction: TransactionEntity): Long =
         transactionDao.insertTransaction(transaction)
 
-    suspend fun updateTransaction(transaction: TransactionEntity) =
+    fun updateTransaction(transaction: TransactionEntity) =
         transactionDao.updateTransaction(transaction)
 
-    suspend fun deleteTransaction(transaction: TransactionEntity) =
+    fun deleteTransaction(transaction: TransactionEntity) =
         transactionDao.deleteTransaction(transaction)
 
-    suspend fun deleteAllTransactions() = transactionDao.deleteAllTransactions()
+    fun deleteAllTransactions() = transactionDao.deleteAllTransactions()
 
-    suspend fun getTransactionCount() = transactionDao.getTransactionCount()
+    fun getTransactionCount() = transactionDao.getTransactionCount()
 
-    suspend fun getTotalAmount() = transactionDao.getTotalAmount() ?: 0L
+    fun getTotalAmount() = transactionDao.getTotalAmount() ?: 0L
 
-    suspend fun getAverageAmount() = transactionDao.getAverageAmount() ?: 0.0
+    fun getAverageAmount() = transactionDao.getAverageAmount() ?: 0.0
 
-    suspend fun getMostUsedService() = transactionDao.getMostUsedService()
+    fun getMostUsedServiceName() = transactionDao.getMostUsedServiceName()
 
-    suspend fun getTotalCommission() = transactionDao.getTotalCommission() ?: 0L
+    fun getTotalCommission() = transactionDao.getTotalCommission() ?: 0L
 
-    suspend fun getServiceBreakdown() = transactionDao.getServiceBreakdown()
-
-    suspend fun getPeakHour() = transactionDao.getPeakHour()
+    fun getServiceCount(service: String) = transactionDao.getServiceCount(service)
 
     // Conversion methods
-    suspend fun insertFromPrintData(printData: PrintData): Long {
+    fun insertFromPrintData(printData: PrintData): Long {
         val transaction = printDataToEntity(printData)
         return insertTransaction(transaction)
     }
@@ -59,13 +57,13 @@ class TransactionRepository(private val transactionDao: TransactionDao) {
 
         return TransactionEntity(
             service = printData.service,
-            serviceType = printData.serviceType,
+            serviceType = 1, // Default service type
             amount = extractAmount(printData.message),
             commission = extractCommission(printData.message),
             phone = printData.referenceData.ref1.takeIf { it.contains(Regex("\\d{10}")) },
             cedula = printData.referenceData.ref2.takeIf { it.isNotEmpty() },
             date = date,
-            referenceNumber = printData.referenceNumber,
+            referenceNumber = generateReferenceNumber(),
             status = "SUCCESS",
             message = printData.message
         )
@@ -81,5 +79,9 @@ class TransactionRepository(private val transactionDao: TransactionDao) {
         val regex = Regex("Comisión: ([\\d,]+) Gs\\.")
         val match = regex.find(message)
         return match?.groupValues?.get(1)?.replace(",", "")?.toLongOrNull() ?: 0L
+    }
+    
+    private fun generateReferenceNumber(): String {
+        return "REF${System.currentTimeMillis()}"
     }
 }

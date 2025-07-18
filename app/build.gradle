@@ -1,7 +1,5 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 35
@@ -15,7 +13,7 @@ android {
     }
     buildFeatures {
         dataBinding true
-        viewBinding true
+        viewBinding false
     }
     buildTypes {
         release {
@@ -23,6 +21,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    
+    // kapt configuration temporarily disabled
     namespace 'com.example.geniotecni.tigo'
 }
 
@@ -59,10 +66,12 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.9.2'
 
-    // Room database
-    implementation "androidx.room:room-runtime:2.7.2"
-    kapt "androidx.room:room-compiler:2.7.2"
-    implementation "androidx.room:room-ktx:2.7.2"
+    // Room database - temporarily disabled for compilation
+    // implementation "androidx.room:room-runtime:2.5.2"
+    // implementation "androidx.room:room-ktx:2.5.2"
+    
+    // Gson for JSON serialization
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     // SwipeRefreshLayout
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
@@ -72,9 +81,5 @@ dependencies {
 
     // Glide for image loading
     implementation 'com.github.bumptech.glide:glide:4.16.0'
-    // Graficos
-    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
     
-    // Material Icons Extended
-    implementation 'androidx.compose.material:material-icons-extended:1.7.8'
 }

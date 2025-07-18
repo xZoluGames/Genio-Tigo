@@ -31,12 +31,11 @@ class StatisticsManager(context: Context) {
             val totalTransactions = repository.getTransactionCount()
             val totalAmount = repository.getTotalAmount()
             val averageAmount = repository.getAverageAmount().toLong()
-            val mostUsedService = repository.getMostUsedService()?.service
+            val mostUsedService = repository.getMostUsedServiceName()
             val totalCommission = repository.getTotalCommission()
-            val peakHour = repository.getPeakHour()?.hour?.let { "${it}:00" }
+            val peakHour: String? = null // TODO: Implement peak hour calculation
 
-            val serviceBreakdown = repository.getServiceBreakdown()
-                .associate { it.service to it.count }
+            val serviceBreakdown: Map<String, Int> = emptyMap() // TODO: Implement service breakdown
 
             // Calculate daily average
             val daysToCalculate = if (daysFilter == -1) 365 else daysFilter

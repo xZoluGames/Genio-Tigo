@@ -1,12 +1,9 @@
 package com.example.geniotecni.tigo.data.entities
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 import java.util.Date
 
-@Entity(tableName = "transactions")
+// Simplified entity without Room annotations
 data class TransactionEntity(
-    @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val service: String,
     val serviceType: Int,

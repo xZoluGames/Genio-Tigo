@@ -23,7 +23,7 @@ import com.example.geniotecni.tigo.R
 import com.example.geniotecni.tigo.helpers.LoadingAnimationHelper
 import com.example.geniotecni.tigo.ui.adapters.ServiceAdapter
 import com.example.geniotecni.tigo.ui.adapters.ServiceItem
-import com.example.geniotecni.tigo.ui.adapters.toServiceItems
+import com.example.geniotecni.tigo.ui.adapters.ServiceAdapter.Companion.toServiceItems
 import com.example.geniotecni.tigo.utils.Constants
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout

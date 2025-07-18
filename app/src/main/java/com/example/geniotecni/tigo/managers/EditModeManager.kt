@@ -96,27 +96,27 @@ class EditModeManager(
     }
 
     private fun findViews() {
-        // Find all UI components
-        editButton = activity.findViewById(R.id.editButton)
-        editButtonsContainer = activity.findViewById(R.id.editButtonsContainer)
-        cancelButton = activity.findViewById(R.id.cancelButton)
-        saveButton = activity.findViewById(R.id.saveButton)
-        resetButton = activity.findViewById(R.id.resetButton)
-        exportButton = activity.findViewById(R.id.exportButton)
-        importButton = activity.findViewById(R.id.importButton)
-        selectionIndicator = activity.findViewById(R.id.selectionIndicator)
-        editModeOverlay = activity.findViewById(R.id.editModeOverlay)
-        editControlsPanel = activity.findViewById(R.id.editControlsPanel)
+        // Find all UI components with null checks
+        editButton = activity.findViewById(R.id.editButton) ?: throw RuntimeException("editButton not found")
+        editButtonsContainer = activity.findViewById(R.id.editButtonsContainer) ?: throw RuntimeException("editButtonsContainer not found")
+        cancelButton = activity.findViewById(R.id.cancelButton) ?: throw RuntimeException("cancelButton not found")
+        saveButton = activity.findViewById(R.id.saveButton) ?: throw RuntimeException("saveButton not found")
+        resetButton = activity.findViewById(R.id.resetButton) ?: throw RuntimeException("resetButton not found")
+        exportButton = activity.findViewById(R.id.exportButton) ?: throw RuntimeException("exportButton not found")
+        importButton = activity.findViewById(R.id.importButton) ?: throw RuntimeException("importButton not found")
+        selectionIndicator = activity.findViewById(R.id.selectionIndicator) ?: throw RuntimeException("selectionIndicator not found")
+        editModeOverlay = activity.findViewById(R.id.editModeOverlay) ?: throw RuntimeException("editModeOverlay not found")
+        editControlsPanel = activity.findViewById(R.id.editControlsPanel) ?: throw RuntimeException("editControlsPanel not found")
 
         // Find edit controls
-        editControlsTitle = activity.findViewById(R.id.editControlsTitle)
-        scaleSlider = activity.findViewById(R.id.scaleSlider)
-        textSizeSlider = activity.findViewById(R.id.textSizeSlider)
-        letterSpacingSlider = activity.findViewById(R.id.letterSpacingSlider)
-        textSizeControl = activity.findViewById(R.id.textSizeControl)
-        letterSpacingControl = activity.findViewById(R.id.letterSpacingControl)
-        applyChangesButton = activity.findViewById(R.id.applyChangesButton)
-        cancelChangesButton = activity.findViewById(R.id.cancelChangesButton)
+        editControlsTitle = activity.findViewById(R.id.editControlsTitle) ?: throw RuntimeException("editControlsTitle not found")
+        scaleSlider = activity.findViewById(R.id.scaleSlider) ?: throw RuntimeException("scaleSlider not found")
+        textSizeSlider = activity.findViewById(R.id.textSizeSlider) ?: throw RuntimeException("textSizeSlider not found")
+        letterSpacingSlider = activity.findViewById(R.id.letterSpacingSlider) ?: throw RuntimeException("letterSpacingSlider not found")
+        textSizeControl = activity.findViewById(R.id.textSizeControl) ?: throw RuntimeException("textSizeControl not found")
+        letterSpacingControl = activity.findViewById(R.id.letterSpacingControl) ?: throw RuntimeException("letterSpacingControl not found")
+        applyChangesButton = activity.findViewById(R.id.applyChangesButton) ?: throw RuntimeException("applyChangesButton not found")
+        cancelChangesButton = activity.findViewById(R.id.cancelChangesButton) ?: throw RuntimeException("cancelChangesButton not found")
     }
 
     private fun setupListeners() {

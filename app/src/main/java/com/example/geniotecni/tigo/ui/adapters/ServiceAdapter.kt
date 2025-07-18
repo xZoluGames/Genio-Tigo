@@ -10,15 +10,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.geniotecni.tigo.R
 import com.google.android.material.card.MaterialCardView
-
-data class ServiceItem(
-    val name: String,
-    val description: String,
-    val icon: Int,
-    val colorResId: Int,
-    val serviceType: Int
-)
-
 class ServiceAdapter(
     private var services: List<ServiceItem>,
     private val onItemClick: (ServiceItem) -> Unit
@@ -29,7 +20,7 @@ class ServiceAdapter(
         private const val TYPE_LOAD_MORE = 1
 
         // Service descriptions mapping
-        private val serviceDescriptions = mapOf(
+        val serviceDescriptions = mapOf(
             "Giros Tigo" to "Envía dinero de forma rápida y segura",
             "Retiros Tigo" to "Retira efectivo desde tu billetera",
             "Carga Billetera Tigo" to "Recarga tu billetera digital",
@@ -47,7 +38,7 @@ class ServiceAdapter(
         )
 
         // Service icons mapping
-        private val serviceIcons = mapOf(
+        val serviceIcons = mapOf(
             "Giros Tigo" to R.drawable.ic_money,
             "Retiros Tigo" to R.drawable.ic_money,
             "Carga Billetera Tigo" to R.drawable.ic_money,
@@ -65,7 +56,7 @@ class ServiceAdapter(
         )
 
         // Service colors mapping
-        private val serviceColors = mapOf(
+        val serviceColors = mapOf(
             "Giros Tigo" to R.color.service_tigo,
             "Retiros Tigo" to R.color.service_tigo,
             "Carga Billetera Tigo" to R.color.service_tigo,
@@ -81,6 +72,19 @@ class ServiceAdapter(
             "Telefonia Personal" to R.color.service_personal,
             // Add more colors as needed
         )
+        
+        // Extension function to create ServiceItems from service names
+        fun List<String>.toServiceItems(): List<ServiceItem> {
+            return this.mapIndexed { index, name ->
+                ServiceItem(
+                    name = name,
+                    description = serviceDescriptions[name] ?: "Servicio disponible",
+                    icon = serviceIcons[name] ?: R.drawable.ic_money,
+                    colorResId = serviceColors[name] ?: R.color.md_theme_light_primary,
+                    serviceType = index
+                )
+            }
+        }
     }
 
     private var showingAll = false
@@ -92,7 +96,8 @@ class ServiceAdapter(
     }
 
     override fun getItemViewType(position: Int): Int {
-        return if (position == services.size && !showingAll && !isSearchMode && services.size > displayLimit) {
+        val displayedServiceCount = if (showingAll || isSearchMode) services.size else minOf(services.size, displayLimit)
+        return if (position == displayedServiceCount && !showingAll && !isSearchMode && services.size > displayLimit) {
             TYPE_LOAD_MORE
         } else {
             TYPE_SERVICE
@@ -100,7 +105,7 @@ class ServiceAdapter(
     }
 
     override fun getItemCount(): Int {
-        val displayCount = if (showingAll || isSearchMode) services.size else services.take(displayLimit).size
+        val displayCount = if (showingAll || isSearchMode) services.size else minOf(services.size, displayLimit)
         return displayCount + if (!showingAll && !isSearchMode && services.size > displayLimit) 1 else 0
     }
 
@@ -126,7 +131,13 @@ class ServiceAdapter(
                 val service = if (showingAll || isSearchMode) {
                     services[position]
                 } else {
-                    services.take(displayLimit)[position]
+                    // Ensure we don't exceed the display limit or available services
+                    val limitedServices = services.take(displayLimit)
+                    if (position < limitedServices.size) {
+                        limitedServices[position]
+                    } else {
+                        return // Should not happen, but safety check
+                    }
                 }
                 holder.bind(service)
             }
@@ -167,7 +178,7 @@ class ServiceAdapter(
     }
 
     inner class ServiceViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val card: MaterialCardView = view.findViewById(R.id.root) ?: view as MaterialCardView
+        private val card: MaterialCardView = view as MaterialCardView
         private val iconBackground: View = view.findViewById(R.id.iconBackground)
         private val serviceIcon: ImageView = view.findViewById(R.id.serviceIcon)
         private val serviceName: TextView = view.findViewById(R.id.serviceName)
@@ -213,18 +224,5 @@ class ServiceAdapter(
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
             return oldList[oldItemPosition] == newList[newItemPosition]
         }
-    }
-}
-
-// Extension function to create ServiceItems from service names
-fun List<String>.toServiceItems(): List<ServiceItem> {
-    return this.mapIndexed { index, name ->
-        ServiceItem(
-            name = name,
-            description = ServiceAdapter.serviceDescriptions[name] ?: "Servicio disponible",
-            icon = ServiceAdapter.serviceIcons[name] ?: R.drawable.ic_money,
-            colorResId = ServiceAdapter.serviceColors[name] ?: R.color.md_theme_light_primary,
-            serviceType = index
-        )
     }
 }

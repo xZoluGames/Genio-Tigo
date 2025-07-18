@@ -1,4 +1,34 @@
 <resources>
     <string name="app_name">Genio Tigo</string>
     <string name="title">Title</string>
+    
+    <!-- Menu items -->
+    <string name="export">Exportar</string>
+    <string name="clear">Limpiar</string>
+    
+    <!-- Common strings -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Eliminar</string>
+    <string name="edit">Editar</string>
+    <string name="save">Guardar</string>
+    <string name="search">Buscar</string>
+    <string name="settings">Configuraciones</string>
+    <string name="history">Historial</string>
+    <string name="statistics">Estadísticas</string>
+    
+    <!-- Print and service strings -->
+    <string name="print">Imprimir</string>
+    <string name="service">Servicio</string>
+    <string name="amount">Monto</string>
+    <string name="phone">Teléfono</string>
+    <string name="reference">Referencia</string>
+    <string name="status">Estado</string>
+    <string name="date">Fecha</string>
+    
+    <!-- Status messages -->
+    <string name="success">Éxito</string>
+    <string name="error">Error</string>
+    <string name="warning">Advertencia</string>
+    <string name="info">Información</string>
 </resources>

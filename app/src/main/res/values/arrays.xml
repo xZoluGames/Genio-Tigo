@@ -45,12 +45,19 @@
         <item>200,000</item>
         <item>500,000</item>
     </string-array>
+    
+    <!-- Export options -->
+    <string-array name="export_entries">
+        <item>PDF</item>
+        <item>Excel</item>
+        <item>CSV</item>
+    </string-array>
+    
+    <string-array name="export_values">
+        <item>pdf</item>
+        <item>excel</item>
+        <item>csv</item>
+    </string-array>
 
-    <!-- Preloaded fonts -->
-    <array name="preloaded_fonts">
-        <item>@font/roboto</item>
-        <item>@font/roboto_medium</item>
-        <item>@font/roboto_bold</item>
-    </array>
 
 </resources>

@@ -64,11 +64,8 @@ class StatisticsActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        setSupportActionBar(findViewById(R.id.toolbar))
-        supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(true)
-            title = "Estadísticas"
-        }
+        // No toolbar setup needed with NoActionBar theme
+        // Activity title will be handled by the system or manually if needed
     }
 
     private fun initializeViews() {
@@ -271,5 +268,11 @@ class StatisticsActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+    
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finish()
     }
 }
