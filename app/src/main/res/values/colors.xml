@@ -36,22 +36,30 @@
     <color name="card_pressed">#F5F5F5</color>
 
     <!-- Service Colors -->
-    <color name="service_tigo">#00539F</color>
-    <color name="service_personal">#E20074</color>
-    <color name="service_ande">#006847</color>
-    <color name="service_essap">#0084CA</color>
-    <color name="service_copaco">#FF6B00</color>
+    <color name="service_tigo">#0056A3</color>
+    <color name="service_ande">#FF6B00</color>
+    <color name="service_personal">#E2001A</color>
+    <color name="service_essap">#00A859</color>
+    <color name="service_copaco">#4CAF50</color>
 
     <!-- Status Colors -->
-    <color name="success_green">#4CAF50</color>
-    <color name="warning_orange">#FF9800</color>
-    <color name="error_red">#F44336</color>
-    <color name="info_blue">#2196F3</color>
+    <color name="status_success">#4CAF50</color>
+    <color name="status_error">#F44336</color>
+    <color name="status_warning">#FF9800</color>
+    <color name="status_info">#2196F3</color>
 
+    <!-- Chart Colors -->
+    <color name="chart_color_1">#FF6384</color>
+    <color name="chart_color_2">#36A2EB</color>
+    <color name="chart_color_3">#FFCE56</color>
+    <color name="chart_color_4">#4BC0C0</color>
+    <color name="chart_color_5">#9966FF</color>
+    <color name="chart_color_6">#FF9F40</color>
+
+    <!-- Primary Blue (for buttons and accents) -->
+    <color name="primary_blue">#1976D2</color>
     <!-- Legacy Colors -->
-    <color name="primary_blue">#2196F3</color>
     <color name="accent_purple">#9C27B0</color>
-    <color name="black">#000000</color>
     <color name="gray">#757575</color>
     
     <!-- Glass effect colors -->
@@ -59,18 +67,27 @@
     <color name="glass_border">#33FFFFFF</color>
     
     <!-- Additional missing colors -->
-    <color name="white">#FFFFFF</color>
     <color name="teal_200">#80CBC4</color>
     <color name="teal_700">#00796B</color>
     <color name="purple_500">#9C27B0</color>
     <color name="gradient_middle">#1E88E5</color>
     <color name="black_overlay_light">#33000000</color>
     <color name="colorPrimary">#2196F3</color>
-    <color name="status_info">#2196F3</color>
-    <color name="status_success">#4CAF50</color>
-    <color name="status_warning">#FF9800</color>
     
     <!-- Edit Mode Colors -->
     <color name="edit_mode_highlight">#1A2196F3</color>
     <color name="edit_mode_selected">#332196F3</color>
+    <!-- Basic Colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- Background Colors -->
+    <color name="background_light">#F5F5F5</color>
+    <color name="background_dark">#121212</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_disabled">#BDBDBD</color>
 </resources>

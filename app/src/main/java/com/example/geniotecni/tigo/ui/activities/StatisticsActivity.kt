@@ -3,6 +3,7 @@ package com.example.geniotecni.tigo.ui.activities
 import android.graphics.Color
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
@@ -11,10 +12,13 @@ import com.example.geniotecni.tigo.managers.StatisticsManager
 import com.example.geniotecni.tigo.utils.showToast
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.formatter.PercentFormatter
 import com.github.mikephil.charting.utils.ColorTemplate
+import java.text.DecimalFormat
 import java.util.*
 
 class StatisticsActivity : AppCompatActivity() {
@@ -43,6 +47,11 @@ class StatisticsActivity : AppCompatActivity() {
     private lateinit var servicesChart: PieChart
     private lateinit var monthlyChart: BarChart
 
+    // Cards for empty states
+    private lateinit var emptyStateCard: CardView
+    private lateinit var servicesChartCard: CardView
+    private lateinit var monthlyChartCard: CardView
+
     enum class TimeFilter(val displayName: String, val days: Int) {
         TODAY("Hoy", 1),
         WEEK("Esta semana", 7),
@@ -57,15 +66,10 @@ class StatisticsActivity : AppCompatActivity() {
 
         statisticsManager = StatisticsManager(this)
 
-        setupToolbar()
         initializeViews()
-        setupTimeFilters()
+        setupTimeFilterButtons()
+        setupCharts()
         loadStatistics()
-    }
-
-    private fun setupToolbar() {
-        // No toolbar setup needed with NoActionBar theme
-        // Activity title will be handled by the system or manually if needed
     }
 
     private fun initializeViews() {
@@ -90,59 +94,19 @@ class StatisticsActivity : AppCompatActivity() {
         servicesChart = findViewById(R.id.servicesChart)
         monthlyChart = findViewById(R.id.monthlyChart)
 
-        setupCharts()
-    }
+        // Cards
+        emptyStateCard = findViewById(R.id.emptyStateCard)
+        servicesChartCard = findViewById(R.id.servicesChartCard)
+        monthlyChartCard = findViewById(R.id.monthlyChartCard)
 
-    private fun setupCharts() {
-        // Setup Pie Chart
-        servicesChart.apply {
-            description.isEnabled = false
-            isRotationEnabled = true
-            isHighlightPerTapEnabled = true
-            setEntryLabelTextSize(12f)
-            setEntryLabelColor(Color.BLACK)
-            centerText = "Servicios"
-            setCenterTextSize(16f)
-            setDrawCenterText(true)
-            legend.isEnabled = true
-            setUsePercentValues(true)
-        }
-
-        // Setup Bar Chart
-        monthlyChart.apply {
-            description.isEnabled = false
-            setDrawGridBackground(false)
-            setDrawBarShadow(false)
-            setDrawValueAboveBar(true)
-            setPinchZoom(false)
-            setScaleEnabled(false)
-
-            xAxis.apply {
-                position = XAxis.XAxisPosition.BOTTOM
-                setDrawGridLines(false)
-                granularity = 1f
-                valueFormatter = object : ValueFormatter() {
-                    private val months = arrayOf("Ene", "Feb", "Mar", "Abr", "May", "Jun",
-                        "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
-                    override fun getFormattedValue(value: Float): String {
-                        return if (value.toInt() in months.indices) {
-                            months[value.toInt()]
-                        } else ""
-                    }
-                }
-            }
-
-            axisLeft.apply {
-                setDrawGridLines(false)
-                axisMinimum = 0f
-            }
-
-            axisRight.isEnabled = false
-            legend.isEnabled = false
+        // Setup toolbar
+        supportActionBar?.apply {
+            title = "Estadísticas"
+            setDisplayHomeAsUpEnabled(true)
         }
     }
 
-    private fun setupTimeFilters() {
+    private fun setupTimeFilterButtons() {
         val filterButtons = mapOf(
             todayButton to TimeFilter.TODAY,
             weekButton to TimeFilter.WEEK,
@@ -170,8 +134,79 @@ class StatisticsActivity : AppCompatActivity() {
         buttons.forEachIndexed { index, button ->
             val isSelected = filters[index] == currentTimeFilter
             button.apply {
-                setBackgroundColor(if (isSelected) getColor(R.color.primary_blue) else Color.GRAY)
-                setTextColor(Color.WHITE)
+                setBackgroundColor(if (isSelected) getColor(R.color.md_theme_light_primary) else getColor(R.color.md_theme_light_surfaceVariant))
+                setTextColor(if (isSelected) Color.WHITE else getColor(R.color.md_theme_light_onSurfaceVariant))
+            }
+        }
+    }
+
+    private fun setupCharts() {
+        // Setup Pie Chart (Services)
+        servicesChart.apply {
+            description.isEnabled = false
+            isRotationEnabled = true
+            isHighlightPerTapEnabled = true
+            setUsePercentValues(true)
+            setEntryLabelTextSize(12f)
+            setEntryLabelColor(Color.BLACK)
+            centerText = "Servicios"
+            setCenterTextSize(16f)
+            setDrawCenterText(true)
+            transparentCircleRadius = 58f
+            holeRadius = 50f
+            setHoleColor(Color.WHITE)
+            animateY(1000)
+
+            legend.apply {
+                verticalAlignment = Legend.LegendVerticalAlignment.TOP
+                horizontalAlignment = Legend.LegendHorizontalAlignment.RIGHT
+                orientation = Legend.LegendOrientation.VERTICAL
+                setDrawInside(false)
+                xEntrySpace = 7f
+                yEntrySpace = 5f
+                textSize = 12f
+            }
+        }
+
+        // Setup Bar Chart (Monthly)
+        monthlyChart.apply {
+            description.isEnabled = false
+            setDrawValueAboveBar(true)
+            setDrawGridBackground(false)
+            animateY(1000)
+            setScaleEnabled(false)
+            setPinchZoom(false)
+
+            xAxis.apply {
+                position = XAxis.XAxisPosition.BOTTOM
+                setDrawGridLines(false)
+                granularity = 1f
+                textSize = 12f
+                valueFormatter = object : ValueFormatter() {
+                    private val months = arrayOf("Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                        "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+                    override fun getFormattedValue(value: Float): String {
+                        return if (value.toInt() in 0..11) months[value.toInt()] else ""
+                    }
+                }
+            }
+
+            axisLeft.apply {
+                setDrawGridLines(true)
+                granularity = 1f
+                axisMinimum = 0f
+                textSize = 12f
+            }
+
+            axisRight.isEnabled = false
+
+            legend.apply {
+                form = Legend.LegendForm.SQUARE
+                textSize = 12f
+                verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+                horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+                orientation = Legend.LegendOrientation.HORIZONTAL
+                setDrawInside(false)
             }
         }
     }
@@ -179,19 +214,55 @@ class StatisticsActivity : AppCompatActivity() {
     private fun loadStatistics() {
         val stats = statisticsManager.getStatistics(currentTimeFilter.days)
 
+        // Check if there's data
+        if (stats.totalTransactions == 0) {
+            showEmptyState()
+            return
+        }
+
+        hideEmptyState()
+
         // Update text views
         totalTransactionsText.text = stats.totalTransactions.toString()
         totalAmountText.text = formatAmount(stats.totalAmount)
         averageAmountText.text = formatAmount(stats.averageAmount)
-        successRateText.text = "${stats.successRate}%"
+
+        // Remove the hardcoded 100% - show actual success rate
+        val actualSuccessRate = if (stats.totalTransactions > 0) {
+            ((stats.successfulTransactions.toFloat() / stats.totalTransactions) * 100).toInt()
+        } else 0
+        successRateText.text = "$actualSuccessRate%"
+
         mostUsedServiceText.text = stats.mostUsedService ?: "N/A"
         dailyAverageText.text = String.format("%.1f", stats.dailyAverage)
         totalCommissionText.text = formatAmount(stats.totalCommission)
         peakHourText.text = stats.peakHour ?: "N/A"
 
-        // Update charts
+        // Update charts with real data
         updateServicesChart(stats.serviceBreakdown)
         updateMonthlyChart(stats.monthlyData)
+    }
+
+    private fun showEmptyState() {
+        emptyStateCard.visibility = View.VISIBLE
+        servicesChartCard.visibility = View.GONE
+        monthlyChartCard.visibility = View.GONE
+
+        // Set all stats to 0 or N/A
+        totalTransactionsText.text = "0"
+        totalAmountText.text = "Gs. 0"
+        averageAmountText.text = "Gs. 0"
+        successRateText.text = "0%"
+        mostUsedServiceText.text = "N/A"
+        dailyAverageText.text = "0"
+        totalCommissionText.text = "Gs. 0"
+        peakHourText.text = "N/A"
+    }
+
+    private fun hideEmptyState() {
+        emptyStateCard.visibility = View.GONE
+        servicesChartCard.visibility = View.VISIBLE
+        monthlyChartCard.visibility = View.VISIBLE
     }
 
     private fun updateServicesChart(serviceBreakdown: Map<String, Int>) {
@@ -201,78 +272,89 @@ class StatisticsActivity : AppCompatActivity() {
             return
         }
 
-        val entries = serviceBreakdown.map { (service, count) ->
-            PieEntry(count.toFloat(), service)
+        val entries = ArrayList<PieEntry>()
+        val colors = ArrayList<Int>()
+
+        serviceBreakdown.forEach { (service, count) ->
+            if (count > 0) {
+                entries.add(PieEntry(count.toFloat(), service))
+            }
         }
 
-        val dataSet = PieDataSet(entries, "Servicios").apply {
-            colors = ColorTemplate.MATERIAL_COLORS.toList()
+        // Use custom colors
+        colors.addAll(listOf(
+            getColor(R.color.chart_color_1),
+            getColor(R.color.chart_color_2),
+            getColor(R.color.chart_color_3),
+            getColor(R.color.chart_color_4),
+            getColor(R.color.chart_color_5)
+        ))
+
+        val dataSet = PieDataSet(entries, "").apply {
+            this.colors = colors
             sliceSpace = 3f
             selectionShift = 5f
-            valueTextSize = 10f
+            valueFormatter = PercentFormatter(servicesChart)
+            valueTextSize = 11f
             valueTextColor = Color.WHITE
         }
 
-        val data = PieData(dataSet).apply {
-            setValueFormatter(object : ValueFormatter() {
-                override fun getFormattedValue(value: Float): String {
-                    return "${value.toInt()}"
-                }
-            })
-        }
-
+        val data = PieData(dataSet)
         servicesChart.data = data
-        servicesChart.animateY(1000)
         servicesChart.invalidate()
     }
 
-    private fun updateMonthlyChart(monthlyData: Map<Int, Long>) {
+    private fun updateMonthlyChart(monthlyData: List<Pair<Int, Double>>) {
         if (monthlyData.isEmpty()) {
             monthlyChart.clear()
             monthlyChart.invalidate()
             return
         }
 
-        val entries = monthlyData.map { (month, amount) ->
-            BarEntry(month.toFloat(), amount.toFloat())
+        val entries = ArrayList<BarEntry>()
+        monthlyData.forEach { (month, amount) ->
+            entries.add(BarEntry(month.toFloat(), amount.toFloat()))
         }
 
-        val dataSet = BarDataSet(entries, "Monto mensual").apply {
-            colors = listOf(Color.parseColor("#2196F3"))
+        val dataSet = BarDataSet(entries, "Monto mensual (Gs.)").apply {
+            color = getColor(R.color.md_theme_light_primary)
             valueTextSize = 10f
+            valueFormatter = object : ValueFormatter() {
+                override fun getFormattedValue(value: Float): String {
+                    return formatShortAmount(value.toDouble())
+                }
+            }
         }
 
         val data = BarData(dataSet).apply {
-            barWidth = 0.9f
-            setValueFormatter(object : ValueFormatter() {
-                override fun getFormattedValue(value: Float): String {
-                    return formatAmount(value.toLong())
-                }
-            })
+            barWidth = 0.7f
         }
 
         monthlyChart.data = data
-        monthlyChart.animateY(1000)
+        monthlyChart.setFitBars(true)
         monthlyChart.invalidate()
     }
 
-    private fun formatAmount(amount: Long): String {
-        return String.format("%,d Gs.", amount)
+    private fun formatAmount(amount: Double): String {
+        val formatter = DecimalFormat("#,###")
+        return "Gs. ${formatter.format(amount)}"
+    }
+
+    private fun formatShortAmount(amount: Double): String {
+        return when {
+            amount >= 1_000_000 -> String.format("%.1fM", amount / 1_000_000)
+            amount >= 1_000 -> String.format("%.1fK", amount / 1_000)
+            else -> amount.toInt().toString()
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
-                finish()
+                onBackPressed()
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-    
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        super.onBackPressed()
-        finish()
     }
 }

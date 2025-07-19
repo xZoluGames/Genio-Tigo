@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -41,9 +42,7 @@ import com.example.geniotecni.tigo.ui.adapters.ServiceItem
 import com.example.geniotecni.tigo.utils.Constants
 import com.example.geniotecni.tigo.utils.AppLogger
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -52,17 +51,21 @@ import java.io.IOException
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
-
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        private const val PERMISSION_REQUEST_CODE = 1
         private const val BLUETOOTH_UUID = "00001101-0000-1000-8000-00805F9B34FB"
         private const val DECIMAL_FORMAT_PATTERN = "#,###"
         private const val DATE_FORMAT = "dd-MM-yyyy"
         private const val TIME_FORMAT = "HH:mm:ss"
         private const val COMMISSION_RATE = 0.01f // 1% commission
         private const val TAG = "MainActivity"
+        private const val PERMISSION_REQUEST_CODE = 101
+        private const val REQUEST_ENABLE_BT = 1
     }
 
     // Properties
@@ -70,6 +73,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var printCooldownManager: PrintCooldownManager
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var editModeManager: EditModeManager
+    private lateinit var executeUSSDButton: MaterialButton
+    private lateinit var manualReferenceButton: MaterialButton
+    private lateinit var quickAmountChipGroup: ChipGroup
 
     // Layout components
     private lateinit var coordinatorLayout: CoordinatorLayout
@@ -214,48 +220,69 @@ class MainActivity : AppCompatActivity() {
         AppLogger.i(TAG, "=== INICIANDO MAIN ACTIVITY ===")
         AppLogger.logMemoryUsage(TAG, "MainActivity onCreate inicio")
         AppLogger.i(TAG, "Extras recibidos: ${intent.extras}")
-        
+
         try {
-        val startTime = System.currentTimeMillis()
-        AppLogger.i(TAG, "Cargando layout service")
-        setContentView(R.layout.service)
-        AppLogger.i(TAG, "Layout cargado en ${System.currentTimeMillis() - startTime}ms")
+            // Initialize managers
+            preferencesManager = PreferencesManager(this)
+            editModeManager = EditModeManager(this, this,
+                findViewById(R.id.coordinatorLayout), preferencesManager)
+            bluetoothManager = BluetoothManager(this)
+            printDataManager = PrintDataManager(this)
+            ussdIntegrationHelper = USSDIntegrationHelper(this)
+            setupWindowInsets()
 
-        setupWindowInsets()
-        initializeViews()
-        initializeManagers()
-        setupListeners()
-        setupPermissions()
+            // Setup views
+            initializeViews()
+            setupTextWatchers()
+            setupQuickAmountChips()
+            setupActionButtons()
 
-        // Load service from intent
-        val serviceItem = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra("selectedService", ServiceItem::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            intent.getParcelableExtra("selectedService")
-        }
+            // Load saved values
+            loadSavedValues()
 
-        serviceItem?.let {
-            AppLogger.logServiceSelection(TAG, it.name, it.serviceType)
-            AppLogger.i(TAG, "Icono del servicio: ${it.icon}")
-            currentService = it
-            currentServiceType = it.serviceType
-            updateServiceConfiguration(it.serviceType)
-        } ?: run {
-            AppLogger.w(TAG, "No se recibió servicio, usando configuración por defecto")
-            currentServiceType = 0
-            updateServiceConfiguration(0)
-        }
-        
-        AppLogger.i(TAG, "=== MAIN ACTIVITY INICIALIZADA CORRECTAMENTE ===")
-        AppLogger.logMemoryUsage(TAG, "MainActivity onCreate final")
-        
+            // Get service info from intent
+            currentServiceType = intent.getIntExtra("SERVICE_TYPE", 0)
+            val serviceItem = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra("SERVICE_ITEM", ServiceItem::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra("SERVICE_ITEM")
+            }
+
+            serviceItem?.let {
+                currentService = it
+                AppLogger.i(TAG, "Servicio recibido: ${it.name} (ID: ${it.id})")
+                currentServiceType = it.id
+                updateServiceConfiguration(it.id)
+            } ?: run {
+                AppLogger.w(TAG, "No se recibió servicio, usando configuración por defecto")
+                currentServiceType = 0
+                updateServiceConfiguration(0)
+            }
+
+            AppLogger.i(TAG, "=== MAIN ACTIVITY INICIALIZADA CORRECTAMENTE ===")
+            AppLogger.logMemoryUsage(TAG, "MainActivity onCreate final")
+
         } catch (e: Exception) {
             AppLogger.e(TAG, "Error crítico en MainActivity onCreate", e)
             throw e
         }
     }
-
+    private fun showManualServiceDialog(service: String, message: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Servicio $service")
+            .setMessage("Este servicio no requiere USSD. Los datos han sido preparados para impresión.")
+            .setPositiveButton("Imprimir") { _, _ ->
+                if (bluetoothManager.isBluetoothEnabled() && bluetoothManager.hasSelectedDevice()) {
+                    printData(message, null)
+                    savePrintData(service, message, null)
+                } else {
+                    showSnackbar("Configure una impresora Bluetooth primero")
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
     private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.coordinatorLayout)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -291,14 +318,15 @@ class MainActivity : AppCompatActivity() {
         // Input layouts
         phoneInputLayout = findViewById(R.id.phoneInputLayout)
         phoneInput = findViewById(R.id.phoneInput)
-        phoneCounterText = findViewById(R.id.phoneCounterText)
         cedulaInputLayout = findViewById(R.id.cedulaInputLayout)
         cedulaInput = findViewById(R.id.cedulaInput)
         amountInputLayout = findViewById(R.id.amountInputLayout)
         amountInput = findViewById(R.id.amountInput)
         dateInputLayout = findViewById(R.id.dateInputLayout)
         dateInput = findViewById(R.id.dateInput)
-
+        executeUSSDButton = findViewById(R.id.executeUSSDButton)
+        manualReferenceButton = findViewById(R.id.manualReferenceButton)
+        quickAmountChipGroup = findViewById(R.id.quickAmountChipGroup)
         // Amount controls (removed - no longer needed)
 
         // Setup toolbar
@@ -311,6 +339,233 @@ class MainActivity : AppCompatActivity() {
         
         val initTime = System.currentTimeMillis() - startTime
         AppLogger.i(TAG, "Vistas inicializadas en ${initTime}ms")
+    }
+    private fun setupQuickAmountChips() {
+        val amounts = listOf("10000", "20000", "50000", "100000", "200000", "500000")
+        val chipIds = listOf(R.id.chip10k, R.id.chip20k, R.id.chip50k,
+            R.id.chip100k, R.id.chip200k, R.id.chip500k)
+
+        chipIds.forEachIndexed { index, chipId ->
+            findViewById<Chip>(chipId)?.setOnClickListener {
+                amountInput.setText(amounts[index])
+                amountInput.setSelection(amountInput.text?.length ?: 0)
+            }
+        }
+    }
+    private fun setupActionButtons() {
+        // Botón USSD
+        executeUSSDButton.setOnClickListener {
+            AppLogger.logButtonClick(TAG, "ExecuteUSSD", "Procesando servicio USSD")
+
+            if (!validateInputs()) {
+                showSnackbar("Por favor complete todos los campos requeridos")
+                return@setOnClickListener
+            }
+
+            if (hasUSSDSupport(currentServiceType)) {
+                processUSSDForService()
+            } else {
+                // Para servicios sin USSD, procesar manualmente
+                processManualService()
+            }
+        }
+
+        // Botón Referencia Manual
+        manualReferenceButton.setOnClickListener {
+            AppLogger.logButtonClick(TAG, "ManualReference", "Ingreso manual de referencia")
+            showManualReferenceDialog()
+        }
+    }
+
+    private fun validateInputs(): Boolean {
+        val phone = phoneInput.text.toString().replace("-", "")
+        val cedula = cedulaInput.text.toString()
+        val amount = amountInput.text.toString().replace(",", "")
+
+        return when (currentServiceType) {
+            0, 1, 2 -> { // Giros, Retiros, Carga Billetera
+                phone.length >= 10 && cedula.isNotEmpty() && amount.isNotEmpty()
+            }
+            3 -> { // Telefonía
+                phone.length >= 10 && amount.isNotEmpty()
+            }
+            7 -> { // Reseteo de Cliente
+                phone.length >= 10 && cedula.isNotEmpty() && dateInput.text.toString().length == 8
+            }
+            else -> {
+                // Para otros servicios, validar según configuración
+                val phoneValid = if (phoneInputLayout.visibility == View.VISIBLE)
+                    phone.isNotEmpty() else true
+                val cedulaValid = if (cedulaInputLayout.visibility == View.VISIBLE)
+                    cedula.isNotEmpty() else true
+                val amountValid = if (amountInputLayout.visibility == View.VISIBLE)
+                    amount.isNotEmpty() else true
+
+                phoneValid && cedulaValid && amountValid
+            }
+        }
+    }
+
+    private fun processManualService() {
+        // Servicios como ANDE, ESSAP, COPACO que no usan USSD
+        val cedula = cedulaInput.text.toString()
+
+        when (currentServiceType) {
+            8 -> { // ANDE
+                if (cedula.isNotEmpty()) {
+                    // Crear mensaje para impresión directa
+                    val message = buildPrintMessage("ANDE", cedula, "", "")
+                    showManualServiceDialog("ANDE", message)
+                }
+            }
+            9 -> { // ESSAP
+                if (cedula.isNotEmpty()) {
+                    val message = buildPrintMessage("ESSAP", cedula, "", "")
+                    showManualServiceDialog("ESSAP", message)
+                }
+            }
+            10 -> { // COPACO
+                if (cedula.isNotEmpty()) {
+                    val message = buildPrintMessage("COPACO", cedula, "", "")
+                    showManualServiceDialog("COPACO", message)
+                }
+            }
+            else -> {
+                showSnackbar("Servicio no configurado")
+            }
+        }
+    }
+
+    private fun showManualReferenceDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_manual_reference, null)
+        val ref1Input = dialogView.findViewById<EditText>(R.id.reference1Input)
+        val ref2Input = dialogView.findViewById<EditText>(R.id.reference2Input)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Ingreso Manual de Referencias")
+            .setMessage("Ingrese las referencias de la transacción")
+            .setView(dialogView)
+            .setPositiveButton("Confirmar") { _, _ ->
+                val ref1 = ref1Input.text.toString()
+                val ref2 = ref2Input.text.toString()
+
+                if (ref1.isNotEmpty() && ref2.isNotEmpty()) {
+                    val referenceData = ReferenceData(ref1, ref2)
+                    processManualReference(referenceData)
+                } else {
+                    showSnackbar("Por favor ingrese ambas referencias")
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun processManualReference(referenceData: ReferenceData) {
+        val phone = phoneInput.text.toString().replace("-", "")
+        val cedula = cedulaInput.text.toString()
+        val amount = amountInput.text.toString().replace(",", "")
+
+        val serviceName = if (::currentService.isInitialized) {
+            currentService.name
+        } else {
+            Constants.SERVICE_NAMES.getOrNull(currentServiceType) ?: "Servicio"
+        }
+
+        val message = buildPrintMessage(serviceName, phone, cedula, amount, referenceData)
+
+        // Guardar en historial
+        savePrintData(serviceName, message, referenceData)
+
+        // Imprimir si está configurado
+        if (bluetoothManager.isBluetoothEnabled() && bluetoothManager.hasSelectedDevice()) {
+            printData(message, referenceData)
+        } else {
+            showPrintOptionsDialog(message, referenceData)
+        }
+    }
+
+    private fun buildPrintMessage(
+        service: String,
+        phoneOrId: String,
+        cedula: String,
+        amount: String,
+        referenceData: ReferenceData? = null
+    ): String {
+        val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val timeFormatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        val currentDate = Date()
+
+        return buildString {
+            appendLine("================================")
+            appendLine("       GENIO TECNI S.A.")
+            appendLine("================================")
+            appendLine("SERVICIO: $service")
+            appendLine("FECHA: ${dateFormatter.format(currentDate)}")
+            appendLine("HORA: ${timeFormatter.format(currentDate)}")
+            appendLine("--------------------------------")
+
+            when (currentServiceType) {
+                0, 1, 2 -> { // Giros, Retiros, Carga Billetera Tigo
+                    appendLine("TELÉFONO: $phoneOrId")
+                    appendLine("CÉDULA: $cedula")
+                    if (amount.isNotEmpty()) {
+                        appendLine("MONTO: Gs. ${formatAmount(amount)}")
+                    }
+                }
+                3, 4, 5, 6 -> { // Servicios Tigo varios
+                    appendLine("NÚMERO: $phoneOrId")
+                    if (amount.isNotEmpty()) {
+                        appendLine("MONTO: Gs. ${formatAmount(amount)}")
+                    }
+                }
+                7 -> { // Reseteo de Cliente
+                    appendLine("TELÉFONO: $phoneOrId")
+                    appendLine("CÉDULA: $cedula")
+                    appendLine("FECHA NAC: ${dateInput.text}")
+                }
+                8, 9, 10 -> { // ANDE, ESSAP, COPACO
+                    appendLine("NIS/ISSAN/LÍNEA: $phoneOrId")
+                }
+                else -> {
+                    if (phoneOrId.isNotEmpty()) appendLine("DATOS: $phoneOrId")
+                    if (cedula.isNotEmpty()) appendLine("DOCUMENTO: $cedula")
+                    if (amount.isNotEmpty()) appendLine("MONTO: Gs. ${formatAmount(amount)}")
+                }
+            }
+
+            if (referenceData != null) {
+                appendLine("--------------------------------")
+                appendLine("REFERENCIAS:")
+                appendLine("REF 1: ${referenceData.ref1}")
+                appendLine("REF 2: ${referenceData.ref2}")
+            }
+
+            appendLine("================================")
+            appendLine("    ¡GRACIAS POR SU PREFERENCIA!")
+            appendLine("================================")
+        }
+    }
+
+    private fun formatAmount(amount: String): String {
+        return try {
+            val number = amount.toLong()
+            DecimalFormat("#,###").format(number)
+        } catch (e: Exception) {
+            amount
+        }
+    }
+
+    private fun savePrintData(service: String, message: String, referenceData: ReferenceData?) {
+        val printData = PrintData(
+            service = service,
+            date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
+            time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()),
+            message = message,
+            referenceData = referenceData
+        )
+
+        printDataManager.savePrintData(printData)
+        AppLogger.i(TAG, "Datos guardados en historial: $service")
     }
 
     private fun initializeManagers() {
@@ -584,81 +839,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun validateInputs(): Boolean {
-        val config = serviceConfigs[currentServiceType] ?: return false
-        var isValid = true
-
-        // Validate phone
-        if (config.showPhone) {
-            val phone = phoneInput.text.toString().replace("-", "")
-            when {
-                phone.isEmpty() -> {
-                    phoneInputLayout.error = "Ingrese el número de teléfono"
-                    isValid = false
-                }
-                phone.length != 10 -> {
-                    phoneInputLayout.error = "El número debe tener 10 dígitos"
-                    isValid = false
-                }
-                !phone.startsWith("09") -> {
-                    phoneInputLayout.error = "El número debe comenzar con 09"
-                    isValid = false
-                }
-                else -> phoneInputLayout.error = null
-            }
-        }
-
-        // Validate cedula
-        if (config.showCedula) {
-            val cedula = cedulaInput.text.toString()
-            when {
-                cedula.isEmpty() -> {
-                    cedulaInputLayout.error = "Ingrese el número de cédula"
-                    isValid = false
-                }
-                cedula.length < 5 -> {
-                    cedulaInputLayout.error = "Número de cédula inválido"
-                    isValid = false
-                }
-                else -> cedulaInputLayout.error = null
-            }
-        }
-
-        // Validate amount
-        if (config.showAmount) {
-            val amountText = amountInput.text.toString().replace(",", "")
-            val amount = amountText.toLongOrNull() ?: 0L
-            when {
-                amountText.isEmpty() -> {
-                    amountInputLayout.error = "Ingrese el monto"
-                    isValid = false
-                }
-                amount < 1000 -> {
-                    amountInputLayout.error = "El monto mínimo es 1,000 Gs."
-                    isValid = false
-                }
-                else -> amountInputLayout.error = null
-            }
-        }
-
-        // Validate birth date
-        if (config.showNacimiento) {
-            val date = dateInput.text.toString()
-            when {
-                date.isEmpty() -> {
-                    dateInputLayout.error = "Ingrese la fecha de nacimiento"
-                    isValid = false
-                }
-                !isValidDate(date) -> {
-                    dateInputLayout.error = "Formato de fecha inválido (dd/mm/yyyy)"
-                    isValid = false
-                }
-                else -> dateInputLayout.error = null
-            }
-        }
-
-        return isValid
-    }
 
     private fun isValidDate(date: String): Boolean {
         return try {
@@ -1405,7 +1585,7 @@ class MainActivity : AppCompatActivity() {
             .setNeutralButton("Cancelar", null)
             .show()
     }
-
+    data class ReferenceData(val ref1: String, val ref2: String)
     override fun onDestroy() {
         super.onDestroy()
         cancelSMSSearch()

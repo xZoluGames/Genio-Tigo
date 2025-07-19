@@ -65,52 +65,7 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-            <!-- Search Card -->
-            <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/searchCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:cardElevation="4dp"
-                    app:cardCornerRadius="16dp"
-                    app:strokeWidth="0dp">
 
-                <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                    <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Buscar Servicio"
-                            android:textAppearance="@style/TextAppearance.GenioTigo.Headline5"
-                            android:textColor="@color/md_theme_light_onSurface"
-                            android:layout_marginBottom="8dp" />
-
-                    <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/searchInputLayout"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            style="@style/Widget.GenioTigo.TextInputLayout"
-                            app:startIconDrawable="@drawable/ic_search"
-                            app:endIconMode="clear_text"
-                            app:hintEnabled="false">
-
-                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                                android:id="@+id/autoCompleteTextView"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="Buscar servicios..."
-                                android:inputType="text"
-                                android:maxLines="1" />
-
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
 
             <!-- Quick Actions -->
             <TextView
@@ -286,7 +241,52 @@
                 </LinearLayout>
 
             </HorizontalScrollView>
+            <!-- Search Card -->
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/searchCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardElevation="4dp"
+                    app:cardCornerRadius="16dp"
+                    app:strokeWidth="0dp">
 
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Buscar Servicio"
+                            android:textAppearance="@style/TextAppearance.GenioTigo.Headline5"
+                            android:textColor="@color/md_theme_light_onSurface"
+                            android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/searchInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            style="@style/Widget.GenioTigo.TextInputLayout"
+                            app:startIconDrawable="@drawable/ic_search"
+                            app:endIconMode="clear_text"
+                            app:hintEnabled="false">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                android:id="@+id/autoCompleteTextView"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Buscar servicios..."
+                                android:inputType="text"
+                                android:maxLines="1" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
             <!-- Services Section -->
             <TextView
                     android:layout_width="wrap_content"
