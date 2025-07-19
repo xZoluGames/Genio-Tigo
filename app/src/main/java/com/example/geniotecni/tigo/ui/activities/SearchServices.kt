@@ -43,6 +43,8 @@ class SearchServices : AppCompatActivity() {
     }
 
     private val servicios = Constants.SERVICE_NAMES
+    private var showAllServices = false // Control para mostrar todos los servicios
+    private val reseteoClienteIndex = 7 // Índice del servicio "Reseteo de Cliente"
 
     // UI Components
     private lateinit var appBarLayout: AppBarLayout
@@ -166,15 +168,21 @@ class SearchServices : AppCompatActivity() {
             }
         })
 
-        // Create service items
-        val serviceItems = servicios.toList().toServiceItems()
+        // Create service items - initially show only up to "Reseteo de Cliente" + "Ver más"
+        val serviceItems = getVisibleServices()
         AppLogger.logDataProcessing(TAG, "Crear elementos de servicio", "ServiceItems", serviceItems.size)
 
         serviceAdapter = ServiceAdapter(
             services = serviceItems,
             onItemClick = { service ->
                 AppLogger.logUserAction(TAG, "Selección de servicio desde RecyclerView", service.name)
-                navigateToMainActivity(service)
+                if (service.name == "Ver más") {
+                    AppLogger.i(TAG, "Botón 'Ver más' presionado - expandiendo lista completa")
+                    showAllServices = true
+                    updateVisibleServices()
+                } else {
+                    navigateToMainActivity(service)
+                }
             }
         )
         AppLogger.d(TAG, "ServiceAdapter configurado")
@@ -349,25 +357,52 @@ class SearchServices : AppCompatActivity() {
 
     private fun filterServices(query: String) {
         val startTime = System.currentTimeMillis()
-        val filteredServices = servicios.filter { service ->
-            service.contains(query, ignoreCase = true)
+        
+        if (query.isBlank()) {
+            // Si no hay búsqueda, mostrar servicios según estado actual
+            serviceAdapter.updateServices(getVisibleServices())
+        } else {
+            // Si hay búsqueda, mostrar todos los servicios que coincidan
+            val filteredServices = servicios.filter { service ->
+                service.contains(query, ignoreCase = true)
+            }
+            serviceAdapter.updateServices(filteredServices.toServiceItems())
         }
+        
         val filterTime = System.currentTimeMillis() - startTime
-        AppLogger.logSearchQuery(TAG, query, filteredServices.size, filterTime)
-        serviceAdapter.updateServices(filteredServices)
+        AppLogger.logSearchQuery(TAG, query, serviceAdapter.itemCount, filterTime)
+    }
+    
+    private fun getVisibleServices(): List<ServiceItem> {
+        return if (showAllServices) {
+            // Mostrar todos los servicios (sin botón "Ver más")
+            AppLogger.d(TAG, "Mostrando todos los ${servicios.size} servicios")
+            servicios.toList().toServiceItems()
+        } else {
+            // Mostrar solo hasta "Reseteo de Cliente" (índice 7) + botón "Ver más"
+            val visibleServices = servicios.toList().take(reseteoClienteIndex + 1).toMutableList()
+            visibleServices.add("Ver más")
+            AppLogger.d(TAG, "Mostrando ${visibleServices.size} servicios (hasta reseteo + Ver más)")
+            visibleServices.toServiceItems()
+        }
+    }
+    
+    private fun updateVisibleServices() {
+        serviceAdapter.updateServices(getVisibleServices())
     }
 
     private fun navigateToMainActivity(service: ServiceItem) {
         AppLogger.logNavigationStart(TAG, "SearchServices", "MainActivity", "Servicio: ${service.name}")
-        AppLogger.logServiceSelection(TAG, service.name, service.serviceType)
+        AppLogger.logServiceSelection(TAG, service.name, service.id)
 
         loadingHelper.showLoadingAndNavigate(
             targetActivity = MainActivity::class.java,
             message = "Cargando ${service.name}...",
             duration = 1200L
         ) {
-            putExtra("selectedService", service)
-            AppLogger.d(TAG, "Extra 'selectedService' agregado al Intent")
+            putExtra("SERVICE_ITEM", service)
+            putExtra("SERVICE_TYPE", service.id)
+            AppLogger.d(TAG, "Extra 'SERVICE_ITEM' y 'SERVICE_TYPE' agregados al Intent")
         }
     }
 
@@ -383,6 +418,20 @@ class SearchServices : AppCompatActivity() {
             AppLogger.w(TAG, "No se encontró dispositivo Bluetooth configurado")
             showSnackbar("No se encontró dispositivo Bluetooth configurado")
         } else {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return
+            }
             AppLogger.i(TAG, "Dispositivo Bluetooth encontrado: ${device.name ?: device.address}")
         }
 

@@ -11,7 +11,13 @@
       "Bash(cp:*)",
       "Bash(rm:*)",
       "Bash(kotlinc:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(ls:*)",
+      "Bash(for f in app/src/main/res/drawable/*.png)",
+      "Bash(do if [ \"$(file \"$f\" | grep -c JPEG)\" -gt 0 ])",
+      "Bash(then echo \"$f is actually a JPEG\")",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": []
   }

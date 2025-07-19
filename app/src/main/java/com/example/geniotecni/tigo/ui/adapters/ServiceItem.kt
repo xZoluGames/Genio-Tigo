@@ -10,4 +10,4 @@ data class ServiceItem(
     val icon: Int,
     val color: Int,
     val isActive: Boolean = true
-)
+) : Serializable

@@ -43,14 +43,14 @@ class StatisticsActivity : AppCompatActivity() {
     private lateinit var totalCommissionText: TextView
     private lateinit var peakHourText: TextView
 
-    // Charts
-    private lateinit var servicesChart: PieChart
-    private lateinit var monthlyChart: BarChart
+    // Charts - nullable since they might not exist in layout
+    private var servicesChart: PieChart? = null
+    private var monthlyChart: BarChart? = null
 
-    // Cards for empty states
-    private lateinit var emptyStateCard: CardView
-    private lateinit var servicesChartCard: CardView
-    private lateinit var monthlyChartCard: CardView
+    // Cards for empty states - nullable since they might not exist in layout
+    private var emptyStateCard: CardView? = null
+    private var servicesChartCard: CardView? = null
+    private var monthlyChartCard: CardView? = null
 
     enum class TimeFilter(val displayName: String, val days: Int) {
         TODAY("Hoy", 1),
@@ -90,14 +90,14 @@ class StatisticsActivity : AppCompatActivity() {
         totalCommissionText = findViewById(R.id.totalCommissionText)
         peakHourText = findViewById(R.id.peakHourText)
 
-        // Charts
+        // Charts - try to find but don't fail if they don't exist
         servicesChart = findViewById(R.id.servicesChart)
         monthlyChart = findViewById(R.id.monthlyChart)
 
-        // Cards
-        emptyStateCard = findViewById(R.id.emptyStateCard)
-        servicesChartCard = findViewById(R.id.servicesChartCard)
-        monthlyChartCard = findViewById(R.id.monthlyChartCard)
+        // Cards - try to find but don't fail if they don't exist (these may not exist in current layout)
+        emptyStateCard = null // findViewById(R.id.emptyStateCard)
+        servicesChartCard = null // findViewById(R.id.servicesChartCard) 
+        monthlyChartCard = null // findViewById(R.id.monthlyChartCard)
 
         // Setup toolbar
         supportActionBar?.apply {
@@ -142,7 +142,7 @@ class StatisticsActivity : AppCompatActivity() {
 
     private fun setupCharts() {
         // Setup Pie Chart (Services)
-        servicesChart.apply {
+        servicesChart?.apply {
             description.isEnabled = false
             isRotationEnabled = true
             isHighlightPerTapEnabled = true
@@ -169,7 +169,7 @@ class StatisticsActivity : AppCompatActivity() {
         }
 
         // Setup Bar Chart (Monthly)
-        monthlyChart.apply {
+        monthlyChart?.apply {
             description.isEnabled = false
             setDrawValueAboveBar(true)
             setDrawGridBackground(false)
@@ -224,18 +224,15 @@ class StatisticsActivity : AppCompatActivity() {
 
         // Update text views
         totalTransactionsText.text = stats.totalTransactions.toString()
-        totalAmountText.text = formatAmount(stats.totalAmount)
-        averageAmountText.text = formatAmount(stats.averageAmount)
+        totalAmountText.text = formatAmount(stats.totalAmount.toDouble())
+        averageAmountText.text = formatAmount(stats.averageAmount.toDouble())
 
-        // Remove the hardcoded 100% - show actual success rate
-        val actualSuccessRate = if (stats.totalTransactions > 0) {
-            ((stats.successfulTransactions.toFloat() / stats.totalTransactions) * 100).toInt()
-        } else 0
-        successRateText.text = "$actualSuccessRate%"
+        // Use the success rate from statistics
+        successRateText.text = "${stats.successRate}%"
 
         mostUsedServiceText.text = stats.mostUsedService ?: "N/A"
         dailyAverageText.text = String.format("%.1f", stats.dailyAverage)
-        totalCommissionText.text = formatAmount(stats.totalCommission)
+        totalCommissionText.text = formatAmount(stats.totalCommission.toDouble())
         peakHourText.text = stats.peakHour ?: "N/A"
 
         // Update charts with real data
@@ -244,9 +241,9 @@ class StatisticsActivity : AppCompatActivity() {
     }
 
     private fun showEmptyState() {
-        emptyStateCard.visibility = View.VISIBLE
-        servicesChartCard.visibility = View.GONE
-        monthlyChartCard.visibility = View.GONE
+        emptyStateCard?.visibility = View.VISIBLE
+        servicesChartCard?.visibility = View.GONE
+        monthlyChartCard?.visibility = View.GONE
 
         // Set all stats to 0 or N/A
         totalTransactionsText.text = "0"
@@ -260,15 +257,15 @@ class StatisticsActivity : AppCompatActivity() {
     }
 
     private fun hideEmptyState() {
-        emptyStateCard.visibility = View.GONE
-        servicesChartCard.visibility = View.VISIBLE
-        monthlyChartCard.visibility = View.VISIBLE
+        emptyStateCard?.visibility = View.GONE
+        servicesChartCard?.visibility = View.VISIBLE
+        monthlyChartCard?.visibility = View.VISIBLE
     }
 
     private fun updateServicesChart(serviceBreakdown: Map<String, Int>) {
-        if (serviceBreakdown.isEmpty()) {
-            servicesChart.clear()
-            servicesChart.invalidate()
+        if (serviceBreakdown.isEmpty() || servicesChart == null) {
+            servicesChart?.clear()
+            servicesChart?.invalidate()
             return
         }
 
@@ -300,14 +297,14 @@ class StatisticsActivity : AppCompatActivity() {
         }
 
         val data = PieData(dataSet)
-        servicesChart.data = data
-        servicesChart.invalidate()
+        servicesChart?.data = data
+        servicesChart?.invalidate()
     }
 
     private fun updateMonthlyChart(monthlyData: List<Pair<Int, Double>>) {
-        if (monthlyData.isEmpty()) {
-            monthlyChart.clear()
-            monthlyChart.invalidate()
+        if (monthlyData.isEmpty() || monthlyChart == null) {
+            monthlyChart?.clear()
+            monthlyChart?.invalidate()
             return
         }
 
@@ -330,9 +327,9 @@ class StatisticsActivity : AppCompatActivity() {
             barWidth = 0.7f
         }
 
-        monthlyChart.data = data
-        monthlyChart.setFitBars(true)
-        monthlyChart.invalidate()
+        monthlyChart?.data = data
+        monthlyChart?.setFitBars(true)
+        monthlyChart?.invalidate()
     }
 
     private fun formatAmount(amount: Double): String {

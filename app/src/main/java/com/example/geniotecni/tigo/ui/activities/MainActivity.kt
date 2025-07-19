@@ -35,6 +35,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.geniotecni.tigo.R
 import com.example.geniotecni.tigo.managers.*
+import com.example.geniotecni.tigo.helpers.USSDIntegrationHelper
 import com.example.geniotecni.tigo.models.PrintData
 import com.example.geniotecni.tigo.models.ReferenceData
 import com.example.geniotecni.tigo.models.ServiceConfig
@@ -55,7 +56,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
 
     companion object {
         private const val BLUETOOTH_UUID = "00001101-0000-1000-8000-00805F9B34FB"
@@ -73,8 +74,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var printCooldownManager: PrintCooldownManager
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var editModeManager: EditModeManager
+    private lateinit var bluetoothManager: com.example.geniotecni.tigo.managers.BluetoothManager
+    private lateinit var ussdIntegrationHelper: com.example.geniotecni.tigo.helpers.USSDIntegrationHelper
+    private lateinit var amountUsageManager: AmountUsageManager
     private lateinit var executeUSSDButton: MaterialButton
     private lateinit var manualReferenceButton: MaterialButton
+    private lateinit var viewMoreButton: MaterialButton
     private lateinit var quickAmountChipGroup: ChipGroup
 
     // Layout components
@@ -99,12 +104,6 @@ class MainActivity : AppCompatActivity() {
 
     private var currentServiceType = 0
     private lateinit var currentService: ServiceItem
-    private var bluetoothAdapter: BluetoothAdapter? = null
-    private var lastSmsTimestamp = 0L
-    private var smsObserver: ContentObserver? = null
-    private var searchJob: Job? = null
-    private var isSearching = false
-    private var referenceSearchType = ""
 
     // Service configurations map - matches Constants.SERVICE_NAMES
     private val serviceConfigs = mapOf(
@@ -217,22 +216,26 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.service)
         AppLogger.i(TAG, "=== INICIANDO MAIN ACTIVITY ===")
         AppLogger.logMemoryUsage(TAG, "MainActivity onCreate inicio")
         AppLogger.i(TAG, "Extras recibidos: ${intent.extras}")
 
         try {
+            // Initialize views first
+            initializeViews()
+            
             // Initialize managers
             preferencesManager = PreferencesManager(this)
-            editModeManager = EditModeManager(this, this,
-                findViewById(R.id.coordinatorLayout), preferencesManager)
-            bluetoothManager = BluetoothManager(this)
             printDataManager = PrintDataManager(this)
+            printCooldownManager = PrintCooldownManager(this)
+            bluetoothManager = com.example.geniotecni.tigo.managers.BluetoothManager(this)
             ussdIntegrationHelper = USSDIntegrationHelper(this)
+            editModeManager = EditModeManager(this, this, coordinatorLayout, preferencesManager)
+            amountUsageManager = AmountUsageManager(this)
             setupWindowInsets()
 
             // Setup views
-            initializeViews()
             setupTextWatchers()
             setupQuickAmountChips()
             setupActionButtons()
@@ -326,6 +329,7 @@ class MainActivity : AppCompatActivity() {
         dateInput = findViewById(R.id.dateInput)
         executeUSSDButton = findViewById(R.id.executeUSSDButton)
         manualReferenceButton = findViewById(R.id.manualReferenceButton)
+        viewMoreButton = findViewById(R.id.viewMoreButton)
         quickAmountChipGroup = findViewById(R.id.quickAmountChipGroup)
         // Amount controls (removed - no longer needed)
 
@@ -341,17 +345,44 @@ class MainActivity : AppCompatActivity() {
         AppLogger.i(TAG, "Vistas inicializadas en ${initTime}ms")
     }
     private fun setupQuickAmountChips() {
-        val amounts = listOf("10000", "20000", "50000", "100000", "200000", "500000")
-        val chipIds = listOf(R.id.chip10k, R.id.chip20k, R.id.chip50k,
-            R.id.chip100k, R.id.chip200k, R.id.chip500k)
-
-        chipIds.forEachIndexed { index, chipId ->
-            findViewById<Chip>(chipId)?.setOnClickListener {
-                amountInput.setText(amounts[index])
-                amountInput.setSelection(amountInput.text?.length ?: 0)
+        // Limpiar chips anteriores
+        quickAmountChipGroup.removeAllViews()
+        
+        // Obtener los montos más utilizados (ordenados por frecuencia de uso histórico)
+        val topAmounts = amountUsageManager.getTopUsedAmounts()
+        
+        AppLogger.d(TAG, "Configurando chips con montos más utilizados: $topAmounts")
+        
+        // Solo mostrar chips si hay al menos 1 monto registrado
+        if (topAmounts.isNotEmpty()) {
+            topAmounts.forEach { amount ->
+                val chip = Chip(this).apply {
+                    text = amount
+                    isClickable = true
+                    setOnClickListener {
+                        // Remover formato para insertar en el campo
+                        val cleanAmount = amount.replace(",", "")
+                        amountInput.setText(cleanAmount)
+                        amountInput.setSelection(amountInput.text?.length ?: 0)
+                        
+                        // Registrar uso del monto
+                        amountUsageManager.recordAmountUsage(cleanAmount)
+                        
+                        AppLogger.logUserAction(TAG, "Chip de monto seleccionado", amount)
+                    }
+                }
+                quickAmountChipGroup.addView(chip)
             }
+            
+            // Mostrar el grupo de chips
+            quickAmountChipGroup.visibility = View.VISIBLE
+        } else {
+            // No mostrar chips hasta que haya al menos 1 monto registrado
+            quickAmountChipGroup.visibility = View.GONE
+            AppLogger.d(TAG, "No hay montos registrados - ocultando chips")
         }
     }
+    
     private fun setupActionButtons() {
         // Botón USSD
         executeUSSDButton.setOnClickListener {
@@ -374,6 +405,12 @@ class MainActivity : AppCompatActivity() {
         manualReferenceButton.setOnClickListener {
             AppLogger.logButtonClick(TAG, "ManualReference", "Ingreso manual de referencia")
             showManualReferenceDialog()
+        }
+
+        // Botón Ver más (para reseteo de cliente)
+        viewMoreButton.setOnClickListener {
+            AppLogger.logButtonClick(TAG, "ViewMore", "Ver más información de reseteo")
+            showResetClientMoreInfo()
         }
     }
 
@@ -561,7 +598,7 @@ class MainActivity : AppCompatActivity() {
             date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
             time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()),
             message = message,
-            referenceData = referenceData
+            referenceData = referenceData ?: ReferenceData("N/A", "N/A")
         )
 
         printDataManager.savePrintData(printData)
@@ -742,10 +779,15 @@ class MainActivity : AppCompatActivity() {
         phoneInputLayout.visibility = if (config.showPhone) View.VISIBLE else View.GONE
         cedulaInputLayout.visibility = if (config.showCedula) View.VISIBLE else View.GONE
         amountInputLayout.visibility = if (config.showAmount) View.VISIBLE else View.GONE
-        // Amount controls removed - no longer needed
-
+        
+        // Hide/show quickAmountChipGroup based on amount input visibility
+        quickAmountChipGroup.visibility = if (config.showAmount) View.VISIBLE else View.GONE
+        
         // Handle date input for birth date
         dateInputLayout.visibility = if (config.showNacimiento) View.VISIBLE else View.GONE
+
+        // Show "Ver más" button only for Reset Client service (ID 7)
+        viewMoreButton.visibility = if (serviceType == 7) View.VISIBLE else View.GONE
 
         // Update hints
         phoneInputLayout.hint = config.phoneHint
@@ -758,6 +800,12 @@ class MainActivity : AppCompatActivity() {
 
         // Clear inputs when switching services
         clearAllInputs()
+        
+        // Auto-load "09" for services that need phone input
+        initializePhoneInput(serviceType)
+        
+        // Update chips with latest usage data
+        setupQuickAmountChips()
     }
 
     private fun clearAllInputs() {
@@ -771,6 +819,17 @@ class MainActivity : AppCompatActivity() {
         cedulaInputLayout.error = null
         amountInputLayout.error = null
         dateInputLayout.error = null
+    }
+    
+    private fun initializePhoneInput(serviceType: Int) {
+        val config = serviceConfigs[serviceType]
+        
+        // Auto-load "09" for services that require phone input
+        if (config?.showPhone == true) {
+            phoneInput.setText("09")
+            phoneInput.setSelection(phoneInput.text?.length ?: 0) // Set cursor at end
+            AppLogger.d(TAG, "Auto-cargado '09' para servicio tipo $serviceType")
+        }
     }
 
     // adjustAmount method removed - no longer needed
@@ -811,6 +870,13 @@ class MainActivity : AppCompatActivity() {
                 val printData = createPrintData()
                 AppLogger.logDataProcessing(TAG, "Crear datos de impresión", "PrintData", 1, System.currentTimeMillis() - startTime)
                 printDataManager.savePrintData(printData)
+                
+                // Registrar uso del monto si aplica
+                val amountText = amountInput.text.toString().replace(",", "")
+                if (amountText.isNotEmpty() && amountText.toLongOrNull() != null) {
+                    amountUsageManager.recordAmountUsage(amountText)
+                    AppLogger.d(TAG, "Uso de monto registrado: $amountText")
+                }
                 AppLogger.logFileOperation(TAG, "Guardar", "PrintData", true)
                 printCooldownManager.recordPrint()
                 AppLogger.d(TAG, "Cooldown de impresión registrado")
@@ -902,68 +968,15 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    @SuppressLint("MissingPermission")
     private fun printTransaction(printData: PrintData) {
-        AppLogger.logPrintEvent(TAG, "Iniciar impresión", "Preparando datos")
-        val sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE)
-        val deviceAddress = sharedPreferences.getString("BluetoothDeviceAddress", null) 
-        if (deviceAddress == null) {
-            AppLogger.logPrintEvent(TAG, "Error", "No hay dispositivo configurado", false)
-            return
-        }
-
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        AppLogger.logBluetoothEvent(TAG, "Obtener adaptador Bluetooth", deviceAddress)
-        val device = bluetoothAdapter?.getRemoteDevice(deviceAddress)
-        if (device == null) {
-            AppLogger.logBluetoothEvent(TAG, "Error obteniendo dispositivo", deviceAddress, false)
-            return
-        }
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                AppLogger.logBluetoothEvent(TAG, "Intentando conectar", device.name ?: device.address)
-                val uuid = UUID.fromString(BLUETOOTH_UUID)
-                val socket = device.createRfcommSocketToServiceRecord(uuid)
-                val connectStart = System.currentTimeMillis()
-                socket.connect()
-                AppLogger.logBluetoothEvent(TAG, "Conectado", device.name ?: device.address)
-                AppLogger.i(TAG, "Conexión establecida en ${System.currentTimeMillis() - connectStart}ms")
-
-                val outputStream = socket.outputStream
-                AppLogger.logPrintEvent(TAG, "Enviando datos", "Comandos de impresión")
-
-                // Print commands
-                val alignCenterCommand = byteArrayOf(0x1B, 0x61, 0x01)
-                val largeFontCommand = byteArrayOf(0x1D, 0x21, 0x11)
-                val normalFontCommand = byteArrayOf(0x1B, 0x21, 0x00)
-
-                outputStream.write(alignCenterCommand)
-                outputStream.write(largeFontCommand)
-                outputStream.write("GENIO TECNI\n".toByteArray())
-                outputStream.write(normalFontCommand)
-                outputStream.write("\n".toByteArray())
-                outputStream.write(printData.message.toByteArray())
-                outputStream.write("\n\n\n".toByteArray())
-                outputStream.flush()
-                AppLogger.logPrintEvent(TAG, "Datos enviados", "${printData.message.length} caracteres")
-
-                outputStream.close()
-                socket.close()
-                AppLogger.logBluetoothEvent(TAG, "Conexión cerrada", device.name ?: device.address)
-
-                withContext(Dispatchers.Main) {
-                    AppLogger.logPrintEvent(TAG, "Completada", "Impresión exitosa")
-                    showSnackbar("Impresión completada")
-                }
-
-            } catch (e: IOException) {
-                AppLogger.logPrintEvent(TAG, "Error de E/S", e.message ?: "Error desconocido", false)
-                AppLogger.logBluetoothEvent(TAG, "Error de conexión", device.name ?: device.address, false)
-                e.printStackTrace()
-                withContext(Dispatchers.Main) {
-                    showSnackbar("Error al imprimir: ${e.message}")
-                }
+        bluetoothManager.printData(printData.message) { success, error ->
+            if (success) {
+                AppLogger.i(TAG, "Impresión completada exitosamente")
+                showSnackbar("Impresión completada")
+            } else {
+                AppLogger.e(TAG, "Error en impresión: $error")
+                showSnackbar("Error de impresión: $error")
+                showPrintErrorDialog(printData)
             }
         }
     }
@@ -1135,6 +1148,49 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showResetClientMoreInfo() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Reseteo de Cliente - Información Adicional")
+            .setMessage("""
+                |El reseteo de cliente permite restaurar la información del usuario en el sistema Tigo Money.
+                |
+                |📋 Datos Requeridos:
+                |• Número de teléfono (línea Tigo)
+                |• Número de cédula de identidad
+                |• Fecha de nacimiento (DD/MM/AAAA)
+                |
+                |⚠️ Importante:
+                |• Verificar que todos los datos sean correctos
+                |• El cliente debe estar presente durante el proceso
+                |• Solo se puede realizar con líneas Tigo activas
+                |
+                |💡 Proceso:
+                |1. Completar todos los campos requeridos
+                |2. Presionar "Ejecutar USSD"
+                |3. Seguir las instrucciones en pantalla
+                |4. Confirmar el reseteo cuando se solicite
+                |
+                |📞 Soporte:
+                |En caso de problemas, contactar al *611 desde línea Tigo.
+            """.trimMargin())
+            .setPositiveButton("Entendido", null)
+            .setNeutralButton("Llamar Soporte") { _, _ ->
+                // Intent to call support
+                try {
+                    val callIntent = Intent(Intent.ACTION_CALL)
+                    callIntent.data = Uri.parse("tel:*611")
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                        startActivity(callIntent)
+                    } else {
+                        showSnackbar("Permiso de llamada requerido")
+                    }
+                } catch (e: Exception) {
+                    showSnackbar("No se pudo realizar la llamada")
+                }
+            }
+            .show()
+    }
+
     private fun showSnackbar(message: String) {
         Snackbar.make(coordinatorLayout, message, Snackbar.LENGTH_SHORT).show()
     }
@@ -1174,10 +1230,6 @@ class MainActivity : AppCompatActivity() {
                 startActivity(callIntent)
                 AppLogger.logNetworkEvent(TAG, "Llamada USSD iniciada", phoneNumber)
                 showSnackbar("Iniciando llamada USSD...")
-                
-                // Start SMS monitoring
-                startSMSSearch()
-                AppLogger.i(TAG, "Monitoreo SMS iniciado")
             } else {
                 AppLogger.w(TAG, "No se encontraron SIMs disponibles")
                 showSnackbar("No se encontraron SIMs disponibles")
@@ -1197,108 +1249,98 @@ class MainActivity : AppCompatActivity() {
         when (currentServiceType) {
             0 -> { // Giros Tigo
                 if (phone.length == 10 && cedula.length >= 5 && amount.isNotEmpty()) {
-                    val ussdCode = "*555*1*$phone*$cedula*1*$amount#"
-                    makeCallWithSIM(ussdCode)
-                    copyToClipboard(amount)
-                    copyToClipboard(cedula)
-                    copyToClipboard(phone)
-                    startReferenceSearch("Giros")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForTigoGiros(phone, cedula, amount)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "Giros", this)
+                    ussdIntegrationHelper.copyToClipboard(amount)
+                    ussdIntegrationHelper.copyToClipboard(cedula)
+                    ussdIntegrationHelper.copyToClipboard(phone)
                 } else {
                     showSnackbar("Complete todos los datos requeridos")
                 }
             }
             1 -> { // Retiros Tigo
                 if (phone.length == 10 && cedula.length >= 5 && amount.isNotEmpty()) {
-                    val ussdCode = "*555*2*$phone*$cedula*1*$amount#"
-                    makeCallWithSIM(ussdCode)
-                    copyToClipboard(amount)
-                    copyToClipboard(cedula)
-                    copyToClipboard(phone)
-                    startReferenceSearch("Retiros")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForTigoRetiros(phone, cedula, amount)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "Retiros", this)
+                    ussdIntegrationHelper.copyToClipboard(amount)
+                    ussdIntegrationHelper.copyToClipboard(cedula)
+                    ussdIntegrationHelper.copyToClipboard(phone)
                 } else {
                     showSnackbar("Complete todos los datos requeridos")
                 }
             }
             2 -> { // Carga Billetera Tigo
                 if (phone.length == 10 && cedula.length >= 5 && amount.isNotEmpty()) {
-                    val ussdCode = "*555*3*1*$cedula*1*$phone*$amount#"
-                    makeCallWithSIM(ussdCode)
-                    copyToClipboard(amount)
-                    copyToClipboard(cedula)
-                    copyToClipboard(phone)
-                    startReferenceSearch("Billetera")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForTigoBilletera(phone, cedula, amount)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "Billetera", this)
+                    ussdIntegrationHelper.copyToClipboard(amount)
+                    ussdIntegrationHelper.copyToClipboard(cedula)
+                    ussdIntegrationHelper.copyToClipboard(phone)
                 } else {
                     showSnackbar("Complete todos los datos requeridos")
                 }
             }
             3 -> { // Telefonia Tigo
                 if (phone.length == 10) {
-                    val ussdCode = "*555*5*1*1*1*$phone*$phone#"
-                    makeCallWithSIM(ussdCode)
-                    copyToClipboard(phone)
-                    startReferenceSearch("Servicio")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForTigoTelefonia(phone)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "Servicio", this)
+                    ussdIntegrationHelper.copyToClipboard(phone)
                 } else {
                     showSnackbar("Ingrese un número de teléfono válido")
                 }
             }
             7 -> { // Reseteo de Cliente
                 if (phone.length == 10 && cedula.length >= 5 && birthDate.length >= 8) {
-                    val ussdCode = "*555*6*3*$phone*1*$cedula*$birthDate#"
-                    makeCallWithSIM(ussdCode)
-                    copyToClipboard(phone)
-                    startReferenceSearch("Reseteo")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForReseteoCliente(phone, cedula, birthDate)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "Reseteo", this)
+                    ussdIntegrationHelper.copyToClipboard(phone)
                 } else {
                     showSnackbar("Complete todos los datos requeridos")
                 }
             }
             8 -> { // ANDE
                 if (cedula.isNotEmpty()) {
-                    val ussdCode = "*222*1*2*$cedula#"
-                    makeCallWithSIM(ussdCode)
-                    copyToClipboard(cedula)
-                    startReferenceSearch("ANDE")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForANDE(cedula)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "ANDE", this)
+                    ussdIntegrationHelper.copyToClipboard(cedula)
                 } else {
                     showSnackbar("Ingrese el número de NIS")
                 }
             }
             9 -> { // ESSAP
                 if (cedula.isNotEmpty()) {
-                    val ussdCode = "*222*2*1*$cedula#"
-                    makeCallWithSIM(ussdCode)
-                    copyToClipboard(cedula)
-                    startReferenceSearch("ESSAP")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForESSAP(cedula)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "ESSAP", this)
+                    ussdIntegrationHelper.copyToClipboard(cedula)
                 } else {
                     showSnackbar("Ingrese el número de ISSAN")
                 }
             }
             10 -> { // COPACO
                 if (cedula.isNotEmpty()) {
-                    val ussdCode = "*222*3*1*$cedula#"
-                    makeCallWithSIM(ussdCode)
-                    copyToClipboard(cedula)
-                    startReferenceSearch("COPACO")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForCOPACO(cedula)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "COPACO", this)
+                    ussdIntegrationHelper.copyToClipboard(cedula)
                 } else {
                     showSnackbar("Ingrese el teléfono o cuenta")
                 }
             }
             11 -> { // Retiros Personal
                 if (phone.length == 10 && amount.isNotEmpty()) {
-                    val ussdCode = "*200*2*$phone*$amount#"
-                    makeCallWithSIM(ussdCode, 1) // SIM 2 for Personal
-                    copyToClipboard(amount)
-                    copyToClipboard(phone)
-                    startReferenceSearch("Retiros Personal")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForPersonalRetiros(phone, amount)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "Retiros Personal", this)
+                    ussdIntegrationHelper.copyToClipboard(amount)
+                    ussdIntegrationHelper.copyToClipboard(phone)
                 } else {
                     showSnackbar("Complete todos los datos requeridos")
                 }
             }
             12 -> { // Telefonia Personal
                 if (phone.length == 10 && amount.isNotEmpty()) {
-                    val ussdCode = "*200*4*$phone*$amount#"
-                    makeCallWithSIM(ussdCode, 1) // SIM 2 for Personal
-                    copyToClipboard(amount)
-                    copyToClipboard(phone)
-                    startReferenceSearch("Telefonia Personal")
+                    val ussdCode = ussdIntegrationHelper.generateUSSDForPersonalTelefonia(phone, amount)
+                    ussdIntegrationHelper.executeUSSD(ussdCode, "Telefonia Personal", this)
+                    ussdIntegrationHelper.copyToClipboard(amount)
+                    ussdIntegrationHelper.copyToClipboard(phone)
                 } else {
                     showSnackbar("Complete todos los datos requeridos")
                 }
@@ -1309,152 +1351,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun copyToClipboard(text: String) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Genio Tigo", text)
-        clipboard.setPrimaryClip(clip)
-    }
 
-    private fun startReferenceSearch(serviceType: String) {
-        referenceSearchType = serviceType
-        isSearching = true
-        lastSmsTimestamp = System.currentTimeMillis()
-        
-        showSnackbar("Búsqueda de referencias iniciada")
-
-        // Setup SMS observer
-        smsObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean) {
-                super.onChange(selfChange)
-                searchInMessages(serviceType)
-            }
-        }
-
-        contentResolver.registerContentObserver(
-            Telephony.Sms.CONTENT_URI,
-            true,
-            smsObserver!!
-        )
-
-        // Initial search
-        searchInMessages(serviceType)
-
-        // Auto-cancel after 5 minutes
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (isSearching) {
-                cancelSMSSearch()
-                showSnackbar("Búsqueda finalizada automáticamente")
-            }
-        }, 300000) // 5 minutes
-    }
-
-    private fun startSMSSearch() {
-        // This is called when USSD is dialed to prepare for response
-        lastSmsTimestamp = System.currentTimeMillis()
-    }
-
-    private fun searchInMessages(refType: String) {
-        if (!isSearching) return
-
-        searchJob?.cancel()
-        searchJob = CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val smsUri: Uri = Telephony.Sms.Inbox.CONTENT_URI
-                val selection = "${Telephony.Sms.DATE} > ? AND ${Telephony.Sms.ADDRESS} IN (?, ?, ?, ?)"
-                val selectionArgs = arrayOf(
-                    lastSmsTimestamp.toString(),
-                    "555", "55", "200", "222"
-                )
-
-                val cursor: Cursor? = contentResolver.query(
-                    smsUri,
-                    arrayOf(Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.ADDRESS),
-                    selection,
-                    selectionArgs,
-                    "${Telephony.Sms.DATE} DESC"
-                )
-
-                cursor?.use {
-                    while (it.moveToNext()) {
-                        val body = it.getString(it.getColumnIndexOrThrow(Telephony.Sms.BODY))
-                        val date = it.getLong(it.getColumnIndexOrThrow(Telephony.Sms.DATE))
-                        val address = it.getString(it.getColumnIndexOrThrow(Telephony.Sms.ADDRESS))
-
-                        Log.d(TAG, "SMS encontrado: $body de $address en $date")
-
-                        val referenceData = extractReferenceData(body, refType)
-                        if (referenceData != null) {
-                            withContext(Dispatchers.Main) {
-                                handleReferenceFound(referenceData, body)
-                                cancelSMSSearch()
-                            }
-                            break
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error searching SMS", e)
-                withContext(Dispatchers.Main) {
-                    showSnackbar("Error al buscar SMS: ${e.message}")
-                }
-            }
-        }
-    }
-
-    private fun extractReferenceData(smsBody: String, refType: String): ReferenceData? {
-        return try {
-            when (refType) {
-                "Giros", "Retiros", "Billetera" -> {
-                    val ref1Regex = Regex("""Ref 1: (\d+)""")
-                    val ref2Regex = Regex("""Ref 2: (\d+)""")
-                    
-                    val ref1Match = ref1Regex.find(smsBody)
-                    val ref2Match = ref2Regex.find(smsBody)
-                    
-                    if (ref1Match != null && ref2Match != null) {
-                        ReferenceData(ref1Match.groupValues[1], ref2Match.groupValues[1])
-                    } else {
-                        // Try alternative patterns
-                        val montoYRefRegex = Regex("""Monto PYG ([\d.,]+)[^R]*Ref[ .:]+(\d+)""")
-                        val montoMatch = montoYRefRegex.find(smsBody)
-                        if (montoMatch != null) {
-                            ReferenceData("", montoMatch.groupValues[2])
-                        } else null
-                    }
-                }
-                "Retiros Personal", "Telefonia Personal" -> {
-                    val comprobanteRegex = Regex("""Su comprobante es (\d+)""")
-                    val match = comprobanteRegex.find(smsBody)
-                    match?.let { ReferenceData(it.groupValues[1], "") }
-                }
-                "ANDE", "ESSAP", "COPACO" -> {
-                    val codigoRegex = Regex("""Codigo de referencia: (\d+)""")
-                    val match = codigoRegex.find(smsBody)
-                    match?.let { ReferenceData(it.groupValues[1], "") }
-                }
-                else -> null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error extracting reference data", e)
-            null
-        }
-    }
-
-    private fun handleReferenceFound(referenceData: ReferenceData, smsBody: String) {
-        // Update the print data with actual references
-        val printData = createPrintData().copy(
-            referenceData = referenceData,
-            message = "Transacción completada exitosamente"
-        )
-
-        // Save and potentially print
-        printDataManager.savePrintData(printData)
-        
-        // Show success dialog with references
-        showReferenceDialog(referenceData, smsBody)
-        
-        showSnackbar("Referencias encontradas: ${referenceData.ref1}")
-    }
 
     private fun showReferenceDialog(referenceData: ReferenceData, smsBody: String) {
         MaterialAlertDialogBuilder(this)
@@ -1476,15 +1373,6 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun cancelSMSSearch() {
-        isSearching = false
-        smsObserver?.let {
-            contentResolver.unregisterContentObserver(it)
-            smsObserver = null
-        }
-        searchJob?.cancel()
-        searchJob = null
-    }
 
     private fun formatPrintDataWithLargeFont(printData: PrintData): ByteArray {
         val output = mutableListOf<Byte>()
@@ -1585,9 +1473,170 @@ class MainActivity : AppCompatActivity() {
             .setNeutralButton("Cancelar", null)
             .show()
     }
-    data class ReferenceData(val ref1: String, val ref2: String)
+    
+    // USSDCallback interface implementation
+    override fun onReferenceFound(referenceData: ReferenceData, smsBody: String) {
+        AppLogger.i(TAG, "Referencias encontradas via USSD: ${referenceData.ref1}")
+        showReferenceDialog(referenceData, smsBody)
+        
+        // Save print data with references
+        val serviceName = if (::currentService.isInitialized) {
+            currentService.name
+        } else {
+            Constants.SERVICE_NAMES.getOrNull(currentServiceType) ?: "Servicio"
+        }
+        
+        val message = buildPrintMessage(serviceName, 
+            phoneInput.text.toString(), 
+            cedulaInput.text.toString(), 
+            amountInput.text.toString().replace(",", ""), 
+            referenceData)
+        savePrintData(serviceName, message, referenceData)
+    }
+    
+    override fun onSearchTimeout() {
+        AppLogger.w(TAG, "Timeout en búsqueda de referencias")
+        showSnackbar("Tiempo de búsqueda agotado. Intente nuevamente.")
+    }
+    
+    override fun onError(error: String) {
+        AppLogger.e(TAG, "Error en integración USSD: $error")
+        showSnackbar("Error: $error")
+    }
+    
+    // Setup TextWatchers method
+    private fun setupTextWatchers() {
+        // Set up phone number formatting
+        phoneInput.addTextChangedListener(object : TextWatcher {
+            private var isFormatting = false
+
+            override fun afterTextChanged(s: Editable?) {
+                if (isFormatting) return
+
+                s?.let {
+                    val unformatted = it.toString().replace("-", "")
+                    if (unformatted.isNotEmpty() && !unformatted.startsWith("09")) {
+                        isFormatting = true
+                        phoneInput.setText("09")
+                        phoneInput.setSelection(phoneInput.text?.length ?: 0)
+                        isFormatting = false
+                    } else if (unformatted.length >= 4) {
+                        isFormatting = true
+                        val formatted = formatPhoneNumber(unformatted)
+                        phoneInput.setText(formatted)
+                        phoneInput.setSelection(formatted.length)
+                        isFormatting = false
+                    }
+                }
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+
+        // Amount formatting
+        amountInput.addTextChangedListener(object : TextWatcher {
+            private var isFormatting = false
+
+            override fun afterTextChanged(s: Editable?) {
+                if (isFormatting) return
+
+                s?.let {
+                    val unformatted = it.toString().replace(",", "")
+                    if (unformatted.isNotEmpty()) {
+                        try {
+                            val amount = unformatted.toLong()
+                            isFormatting = true
+                            val formatted = DecimalFormat(DECIMAL_FORMAT_PATTERN).format(amount)
+                            amountInput.setText(formatted)
+                            amountInput.setSelection(formatted.length)
+                            isFormatting = false
+                        } catch (e: NumberFormatException) {
+                            // Invalid input
+                        }
+                    }
+                }
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+
+        // Date formatting for birth date
+        dateInput.addTextChangedListener(object : TextWatcher {
+            private var isFormatting = false
+            private var previousLength = 0
+
+            override fun afterTextChanged(s: Editable?) {
+                if (isFormatting) return
+
+                s?.let {
+                    val text = it.toString()
+                    val length = text.length
+
+                    isFormatting = true
+
+                    // Auto-add slashes
+                    when {
+                        length == 2 && previousLength < length -> {
+                            dateInput.setText("$text/")
+                            dateInput.setSelection(3)
+                        }
+                        length == 5 && previousLength < length -> {
+                            dateInput.setText("$text/")
+                            dateInput.setSelection(6)
+                        }
+                    }
+
+                    isFormatting = false
+                    previousLength = dateInput.text?.length ?: 0
+                }
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                previousLength = s?.length ?: 0
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+    }
+    
+    // Load saved values method
+    private fun loadSavedValues() {
+        // Load any saved values from preferences if needed
+        AppLogger.d(TAG, "Cargando valores guardados")
+    }
+    
+    // Print data with Bluetooth integration
+    private fun printData(message: String, referenceData: ReferenceData?) {
+        bluetoothManager.printData(message) { success, error ->
+            if (success) {
+                AppLogger.i(TAG, "Impresión completada exitosamente")
+                showSnackbar("Impresión completada")
+            } else {
+                AppLogger.e(TAG, "Error en impresión: $error")
+                showSnackbar("Error de impresión: $error")
+                showPrintOptionsDialog(message, referenceData)
+            }
+        }
+    }
+    
+    private fun showPrintOptionsDialog(message: String, referenceData: ReferenceData?) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Error de Impresión")
+            .setMessage("No se pudo imprimir. ¿Qué desea hacer?")
+            .setPositiveButton("Reintentar") { _, _ ->
+                printData(message, referenceData)
+            }
+            .setNegativeButton("Configurar Bluetooth") { _, _ ->
+                startActivity(Intent(this, Bt::class.java))
+            }
+            .setNeutralButton("Cancelar", null)
+            .show()
+    }
+    
     override fun onDestroy() {
         super.onDestroy()
-        cancelSMSSearch()
+        ussdIntegrationHelper.onDestroy()
     }
 }

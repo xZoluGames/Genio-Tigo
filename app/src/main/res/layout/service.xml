@@ -17,12 +17,27 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                app:navigationIcon="@drawable/ic_arrow_back" />
+                app:navigationIcon="@drawable/ic_arrow_back">
+                
+            <!-- Edit Button in Toolbar -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/editButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="end"
+                    android:layout_marginEnd="16dp"
+                    app:srcCompat="@drawable/ic_edit"
+                    app:backgroundTint="@color/md_theme_light_primary"
+                    app:tint="@color/white"
+                    app:fabSize="mini" />
+                    
+        </com.google.android.material.appbar.MaterialToolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Main Content -->
     <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
@@ -47,31 +62,33 @@
                         android:layout_height="wrap_content"
                         android:padding="20dp">
 
-                    <!-- Service Header -->
+                    <!-- Service Header - REDESIGNED: Centered icon with title below -->
                     <LinearLayout
                             android:id="@+id/serviceHeader"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            app:layout_constraintTop_toTopOf="parent">
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            app:layout_constraintTop_toTopOf="parent"
+                            android:layout_marginBottom="16dp">
 
                         <ImageView
                                 android:id="@+id/serviceImage"
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="72dp"
+                                android:layout_height="72dp"
                                 android:src="@drawable/tigo_cuadrado"
-                                android:scaleType="centerCrop" />
+                                android:scaleType="centerCrop"
+                                android:layout_marginBottom="8dp" />
 
                         <TextView
                                 android:id="@+id/serviceTitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="16dp"
                                 android:text="Giros Tigo"
                                 android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
                                 android:textColor="@color/md_theme_light_onSurface"
-                                android:layout_marginTop="8dp" />
+                                android:gravity="center"
+                                android:textAlignment="center" />
 
                     </LinearLayout>
 
@@ -153,7 +170,7 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             android:layout_marginTop="16dp"
                             app:startIconDrawable="@drawable/ic_date"
-                            android:visibility="gone">
+                            android:visibility="visible">
 
                         <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/dateInput"
@@ -175,53 +192,14 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             android:layout_marginTop="12dp">
 
+                        <!-- Dynamic Amount Chips based on usage -->
                         <com.google.android.material.chip.ChipGroup
                                 android:id="@+id/quickAmountChipGroup"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 app:singleSelection="true">
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/chip10k"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="10,000" />
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/chip20k"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="20,000" />
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/chip50k"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="50,000" />
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/chip100k"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="100,000" />
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/chip200k"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="200,000" />
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/chip500k"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="500,000" />
+                                
+                            <!-- Chips will be added dynamically based on usage -->
 
                         </com.google.android.material.chip.ChipGroup>
 
@@ -260,7 +238,20 @@
                                 android:textAllCaps="false"
                                 app:icon="@drawable/ic_edit"
                                 app:iconGravity="start"
-                                style="@style/Widget.Material3.Button.OutlinedButton" />
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_marginBottom="12dp" />
+
+                        <!-- View More Button (only for Reset Client service) -->
+                        <com.google.android.material.button.MaterialButton
+                                android:id="@+id/viewMoreButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:text="Ver más"
+                                android:textAllCaps="false"
+                                app:icon="@drawable/ic_chevron_right"
+                                app:iconGravity="end"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:visibility="gone" />
 
                     </LinearLayout>
 
@@ -272,9 +263,75 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Edit Mode Card (Initially Hidden) -->
+
+    <!-- Edit Mode Controls (Initially Hidden) -->
+    <LinearLayout
+            android:id="@+id/editButtonsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:layout_margin="16dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:visibility="gone"
+            android:background="@drawable/rounded_card_background"
+            android:padding="8dp">
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/cancelButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Cancelar"
+                app:icon="@drawable/ic_close"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/saveButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_margin="4dp"
+                android:text="Guardar"
+                app:icon="@drawable/ic_save"
+                style="@style/Widget.Material3.Button" />
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/resetButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="4dp"
+                android:layout_weight="1"
+                android:text="Reset"
+                app:icon="@drawable/ic_reset"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/exportButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="4dp"
+                android:layout_weight="1"
+                android:text="Exportar"
+                app:icon="@drawable/ic_export"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/importButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Importar"
+                app:icon="@drawable/ic_import"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+    </LinearLayout>
+
+    <!-- Edit Controls Panel (Initially Hidden) -->
     <com.google.android.material.card.MaterialCardView
-            android:id="@+id/editModeCard"
+            android:id="@+id/editControlsPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
@@ -290,24 +347,32 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-            <!-- Edit Mode Header -->
+            <!-- Edit Controls Title -->
             <TextView
+                    android:id="@+id/editControlsTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Modo de Edición"
+                    android:text="Editando Componente"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                     android:textColor="@color/md_theme_light_primary"
+                    android:layout_marginBottom="8dp" />
+
+            <!-- Group Edit Checkbox -->
+            <CheckBox
+                    android:id="@+id/groupEditCheckbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Editar todos los campos de texto"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                     android:layout_marginBottom="16dp" />
 
-            <!-- Component Controls -->
+            <!-- Scale Control -->
             <LinearLayout
-                    android:id="@+id/componentControls"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:visibility="gone">
+                    android:layout_marginBottom="16dp">
 
-                <!-- Scale Slider -->
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -324,35 +389,92 @@
                         android:valueTo="2.0"
                         android:value="1.0"
                         android:stepSize="0.1"
-                        app:labelBehavior="withinBounds"
-                        android:layout_marginBottom="16dp" />
+                        app:labelBehavior="withinBounds" />
 
-                <!-- Apply/Cancel Buttons -->
-                <LinearLayout
+            </LinearLayout>
+
+            <!-- Text Size Control -->
+            <LinearLayout
+                    android:id="@+id/textSizeControl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone">
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tamaño de Texto"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant"
+                        android:layout_marginBottom="4dp" />
+
+                <com.google.android.material.slider.Slider
+                        android:id="@+id/textSizeSlider"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="8dp">
+                        android:valueFrom="12"
+                        android:valueTo="28"
+                        android:value="16"
+                        android:stepSize="1"
+                        app:labelBehavior="withinBounds" />
 
-                    <com.google.android.material.button.MaterialButton
-                            android:id="@+id/cancelChangesButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
-                            android:text="Cancelar"
-                            style="@style/Widget.Material3.Button.OutlinedButton" />
+            </LinearLayout>
 
-                    <com.google.android.material.button.MaterialButton
-                            android:id="@+id/applyChangesButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
-                            android:text="Aplicar"
-                            style="@style/Widget.Material3.Button" />
+            <!-- Letter Spacing Control -->
+            <LinearLayout
+                    android:id="@+id/letterSpacingControl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone">
 
-                </LinearLayout>
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Espaciado de Letras"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant"
+                        android:layout_marginBottom="4dp" />
+
+                <com.google.android.material.slider.Slider
+                        android:id="@+id/letterSpacingSlider"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="0"
+                        android:valueTo="0.1"
+                        android:value="0"
+                        android:stepSize="0.01"
+                        app:labelBehavior="withinBounds" />
+
+            </LinearLayout>
+
+            <!-- Apply/Cancel Buttons -->
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                <com.google.android.material.button.MaterialButton
+                        android:id="@+id/cancelChangesButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="Cancelar"
+                        style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                <com.google.android.material.button.MaterialButton
+                        android:id="@+id/applyChangesButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Aplicar"
+                        style="@style/Widget.Material3.Button" />
 
             </LinearLayout>
 

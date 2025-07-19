@@ -90,4 +90,9 @@
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>
     <color name="text_disabled">#BDBDBD</color>
+    
+    <!-- Missing Statistics Colors -->
+    <color name="success_green">#4CAF50</color>
+    <color name="info_blue">#2196F3</color>
+    <color name="warning_orange">#FF9800</color>
 </resources>

@@ -23,7 +23,7 @@ class StatisticsManager(context: Context) {
         val totalCommission: Long = 0,
         val peakHour: String? = null,
         val serviceBreakdown: Map<String, Int> = emptyMap(),
-        val monthlyData: Map<Int, Long> = emptyMap()
+        val monthlyData: List<Pair<Int, Double>> = emptyList()
     )
 
     fun getStatistics(daysFilter: Int): Statistics = runBlocking {
@@ -53,7 +53,7 @@ class StatisticsManager(context: Context) {
                 totalCommission = totalCommission,
                 peakHour = peakHour,
                 serviceBreakdown = serviceBreakdown,
-                monthlyData = emptyMap() // TODO: Implement monthly data query
+                monthlyData = emptyList() // TODO: Implement monthly data query
             )
         }
     }

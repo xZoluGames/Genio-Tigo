@@ -41,8 +41,8 @@ class EditModeManager(
     private val rootLayout: CoordinatorLayout,
     private val preferencesManager: PreferencesManager
 ) {
-
     companion object {
+        private const val TAG = "EditModeManager"
         private const val COMPONENT_SCALE_KEY = "component_scale"
         private const val COMPONENT_TEXT_SIZE_KEY = "component_text_size"
         private const val COMPONENT_LETTER_SPACING_KEY = "component_letter_spacing"
@@ -68,26 +68,27 @@ class EditModeManager(
     // Track original background drawables for highlighting
     private val originalBackgrounds = mutableMapOf<View, Drawable?>()
 
-    // Edit mode UI components
-    private lateinit var editButton: MaterialButton
-    private lateinit var editButtonsContainer: View
-    private lateinit var cancelButton: MaterialButton
-    private lateinit var saveButton: MaterialButton
-    private lateinit var resetButton: MaterialButton
-    private lateinit var exportButton: MaterialButton
-    private lateinit var importButton: MaterialButton
-    private lateinit var selectionOverlay: SelectionOverlay
-    private lateinit var editControlsPanel: MaterialCardView
+    // Edit mode UI components - nullable since they might not exist in all layouts
+    private var editButton: MaterialButton? = null
+    private var editButtonsContainer: View? = null
+    private var cancelButton: MaterialButton? = null
+    private var saveButton: MaterialButton? = null
+    private var resetButton: MaterialButton? = null
+    private var exportButton: MaterialButton? = null
+    private var importButton: MaterialButton? = null
+    private var selectionOverlay: SelectionOverlay? = null
+    private var editControlsPanel: MaterialCardView? = null
 
     // Edit controls
-    private lateinit var editControlsTitle: TextView
-    private lateinit var scaleSlider: Slider
-    private lateinit var textSizeSlider: Slider
-    private lateinit var letterSpacingSlider: Slider
-    private lateinit var textSizeControl: LinearLayout
-    private lateinit var letterSpacingControl: LinearLayout
-    private lateinit var applyChangesButton: MaterialButton
-    private lateinit var cancelChangesButton: MaterialButton
+    private var editControlsTitle: TextView? = null
+    private var scaleSlider: Slider? = null
+    private var textSizeSlider: Slider? = null
+    private var letterSpacingSlider: Slider? = null
+    private var textSizeControl: LinearLayout? = null
+    private var letterSpacingControl: LinearLayout? = null
+    private var applyChangesButton: MaterialButton? = null
+    private var cancelChangesButton: MaterialButton? = null
+    private var groupEditCheckbox: CheckBox? = null
 
     // Activity result launchers
     private val createDocumentLauncher = activity.registerForActivityResult(
@@ -135,31 +136,44 @@ class EditModeManager(
     }
 
     private fun findViews() {
-        editButton = activity.findViewById(R.id.editButton) ?: throw RuntimeException("editButton not found")
-        editButtonsContainer = activity.findViewById(R.id.editButtonsContainer) ?: throw RuntimeException("editButtonsContainer not found")
-        cancelButton = activity.findViewById(R.id.cancelButton) ?: throw RuntimeException("cancelButton not found")
-        saveButton = activity.findViewById(R.id.saveButton) ?: throw RuntimeException("saveButton not found")
-        resetButton = activity.findViewById(R.id.resetButton) ?: throw RuntimeException("resetButton not found")
-        exportButton = activity.findViewById(R.id.exportButton) ?: throw RuntimeException("exportButton not found")
-        importButton = activity.findViewById(R.id.importButton) ?: throw RuntimeException("importButton not found")
-        editControlsPanel = activity.findViewById(R.id.editControlsPanel) ?: throw RuntimeException("editControlsPanel not found")
+        // Try to find edit mode UI elements, but don't fail if they don't exist
+        try {
+            editButton = activity.findViewById(R.id.editButton)
+            Log.d(TAG, "EditButton encontrado: ${editButton != null}")
+            editButtonsContainer = activity.findViewById(R.id.editButtonsContainer)
+            cancelButton = activity.findViewById(R.id.cancelButton)
+            saveButton = activity.findViewById(R.id.saveButton)
+            resetButton = activity.findViewById(R.id.resetButton)
+            exportButton = activity.findViewById(R.id.exportButton)
+            importButton = activity.findViewById(R.id.importButton)
+            editControlsPanel = activity.findViewById(R.id.editControlsPanel)
 
-        // Edit controls
-        editControlsTitle = activity.findViewById(R.id.editControlsTitle) ?: throw RuntimeException("editControlsTitle not found")
-        scaleSlider = activity.findViewById(R.id.scaleSlider) ?: throw RuntimeException("scaleSlider not found")
-        textSizeSlider = activity.findViewById(R.id.textSizeSlider) ?: throw RuntimeException("textSizeSlider not found")
-        letterSpacingSlider = activity.findViewById(R.id.letterSpacingSlider) ?: throw RuntimeException("letterSpacingSlider not found")
-        textSizeControl = activity.findViewById(R.id.textSizeControl) ?: throw RuntimeException("textSizeControl not found")
-        letterSpacingControl = activity.findViewById(R.id.letterSpacingControl) ?: throw RuntimeException("letterSpacingControl not found")
-        applyChangesButton = activity.findViewById(R.id.applyChangesButton) ?: throw RuntimeException("applyChangesButton not found")
-        cancelChangesButton = activity.findViewById(R.id.cancelChangesButton) ?: throw RuntimeException("cancelChangesButton not found")
+            // Edit controls
+            editControlsTitle = activity.findViewById(R.id.editControlsTitle)
+            scaleSlider = activity.findViewById(R.id.scaleSlider)
+            textSizeSlider = activity.findViewById(R.id.textSizeSlider)
+            letterSpacingSlider = activity.findViewById(R.id.letterSpacingSlider)
+            textSizeControl = activity.findViewById(R.id.textSizeControl)
+            letterSpacingControl = activity.findViewById(R.id.letterSpacingControl)
+            applyChangesButton = activity.findViewById(R.id.applyChangesButton)
+            cancelChangesButton = activity.findViewById(R.id.cancelChangesButton)
+            groupEditCheckbox = activity.findViewById(R.id.groupEditCheckbox)
+        } catch (e: Exception) {
+            Log.w(TAG, "Algunos elementos de EditMode no encontrados - modo edit deshabilitado")
+        }
     }
 
     private fun createSelectionOverlay() {
-        selectionOverlay = SelectionOverlay(context)
-        rootLayout.addView(selectionOverlay, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        selectionOverlay.visibility = View.GONE
-        selectionOverlay.bringToFront()
+        try {
+            selectionOverlay = SelectionOverlay(context)
+            selectionOverlay?.let { overlay ->
+                rootLayout.addView(overlay, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                overlay.visibility = View.GONE
+                overlay.bringToFront()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "No se pudo crear overlay de selección: ${e.message}")
+        }
     }
 
     private fun analyzeConstraints() {
@@ -186,44 +200,59 @@ class EditModeManager(
     }
 
     private fun setupListeners() {
-        editButton.setOnClickListener { toggleEditMode() }
-        cancelButton.setOnClickListener { exitEditMode(false) }
-        saveButton.setOnClickListener { saveAllChanges() }
-        resetButton.setOnClickListener { showResetConfirmation() }
-        exportButton.setOnClickListener { exportConfiguration() }
-        importButton.setOnClickListener { importConfiguration() }
+        editButton?.setOnClickListener { 
+            Log.d(TAG, "EditButton presionado - iniciando toggleEditMode")
+            toggleEditMode() 
+        }
+        cancelButton?.setOnClickListener { exitEditMode(false) }
+        saveButton?.setOnClickListener { saveAllChanges() }
+        resetButton?.setOnClickListener { showResetConfirmation() }
+        exportButton?.setOnClickListener { exportConfiguration() }
+        importButton?.setOnClickListener { importConfiguration() }
 
         // Slider listeners
-        scaleSlider.addOnChangeListener { _, value, _ ->
+        scaleSlider?.addOnChangeListener { _, value, _ ->
             selectedComponent?.let { component ->
                 component.scaleX = value
                 component.scaleY = value
-                selectionOverlay.updateSelection(component)
+                selectionOverlay?.updateSelection(component)
             }
         }
 
-        textSizeSlider.addOnChangeListener { _, value, _ ->
+        textSizeSlider?.addOnChangeListener { _, value, _ ->
             selectedComponent?.let { component ->
-                when (component) {
-                    is TextView -> {
-                        Log.d("EditModeManager", "Aplicando textSize al TextView: ${value}sp")
-                        component.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
-                    }
-                    is TextInputLayout -> {
-                        component.editText?.let { editText ->
-                            Log.d("EditModeManager", "Aplicando textSize al EditText: ${value}sp")
-                            editText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
+                if (groupEditCheckbox?.isChecked == true && isTextInputLayout(component)) {
+                    // Apply to all TextInputLayout components when group edit is enabled
+                    applyTextSizeToAllTextInputs(value)
+                } else {
+                    // Apply only to selected component
+                    when (component) {
+                        is TextView -> {
+                            Log.d("EditModeManager", "Aplicando textSize al TextView: ${value}sp")
+                            component.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
+                        }
+                        is TextInputLayout -> {
+                            component.editText?.let { editText ->
+                                Log.d("EditModeManager", "Aplicando textSize al EditText: ${value}sp")
+                                editText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
+                            }
                         }
                     }
                 }
             }
         }
 
-        letterSpacingSlider.addOnChangeListener { _, value, _ ->
+        letterSpacingSlider?.addOnChangeListener { _, value, _ ->
             selectedComponent?.let { component ->
-                when (component) {
-                    is TextView -> component.letterSpacing = value
-                    is TextInputLayout -> component.editText?.letterSpacing = value
+                if (groupEditCheckbox?.isChecked == true && isTextInputLayout(component)) {
+                    // Apply to all TextInputLayout components when group edit is enabled
+                    applyLetterSpacingToAllTextInputs(value)
+                } else {
+                    // Apply only to selected component
+                    when (component) {
+                        is TextView -> component.letterSpacing = value
+                        is TextInputLayout -> component.editText?.letterSpacing = value
+                    }
                 }
             }
         }
@@ -231,7 +260,7 @@ class EditModeManager(
         // Add touch listeners for transparency effect while dragging
         addSliderTouchListeners()
 
-        applyChangesButton.setOnClickListener {
+        applyChangesButton?.setOnClickListener {
             selectedComponent?.let {
                 saveComponentConfiguration(it)
                 hideEditControls()
@@ -239,7 +268,7 @@ class EditModeManager(
             }
         }
 
-        cancelChangesButton.setOnClickListener {
+        cancelChangesButton?.setOnClickListener {
             selectedComponent?.let {
                 loadComponentConfiguration(it)
                 hideEditControls()
@@ -272,16 +301,19 @@ class EditModeManager(
         }
         
         // Apply the same touch listener to all sliders
-        scaleSlider.addOnSliderTouchListener(sliderTouchListener)
-        textSizeSlider.addOnSliderTouchListener(sliderTouchListener)
-        letterSpacingSlider.addOnSliderTouchListener(sliderTouchListener)
+        scaleSlider?.addOnSliderTouchListener(sliderTouchListener)
+        textSizeSlider?.addOnSliderTouchListener(sliderTouchListener)
+        letterSpacingSlider?.addOnSliderTouchListener(sliderTouchListener)
     }
 
     private fun toggleEditMode() {
+        Log.d(TAG, "toggleEditMode llamado - modo actual: $isEditMode")
         isEditMode = !isEditMode
         if (isEditMode) {
+            Log.d(TAG, "Entrando en modo edición")
             enterEditMode()
         } else {
+            Log.d(TAG, "Saliendo del modo edición")
             exitEditMode(true)
         }
     }
@@ -290,11 +322,16 @@ class EditModeManager(
         // Save original positions
         saveOriginalPositions()
 
+        // Change edit button to close (X) with red background
+        editButton?.let { button ->
+            button.setIconResource(R.drawable.ic_close)
+            button.backgroundTintList = ContextCompat.getColorStateList(context, android.R.color.holo_red_dark)
+        }
+
         // Show/hide UI elements
-        editButton.visibility = View.GONE
-        editButtonsContainer.visibility = View.VISIBLE
+        editButtonsContainer?.visibility = View.VISIBLE
         // Don't show the dark overlay - allow full interaction
-        selectionOverlay.visibility = View.VISIBLE
+        selectionOverlay?.visibility = View.VISIBLE
 
         // Disable interactive components to prevent interference
         disableInteractiveComponents()
@@ -314,11 +351,17 @@ class EditModeManager(
         }
 
         isEditMode = false
-        editButton.visibility = View.VISIBLE
-        editButtonsContainer.visibility = View.GONE
+        
+        // Restore edit button to original state
+        editButton?.let { button ->
+            button.setIconResource(R.drawable.ic_edit)
+            button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.md_theme_light_primary)
+        }
+        
+        editButtonsContainer?.visibility = View.GONE
 
         hideEditControls()
-        selectionOverlay.visibility = View.GONE
+        selectionOverlay?.visibility = View.GONE
         selectedComponent = null
 
         // Re-enable interactive components
@@ -421,88 +464,19 @@ class EditModeManager(
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 selectComponent(view)
-                dragStartX = event.rawX
-                dragStartY = event.rawY
-                isDragging = false
-                return true
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                val deltaX = event.rawX - dragStartX
-                val deltaY = event.rawY - dragStartY
-
-                if (Math.abs(deltaX) > TOUCH_SLOP || Math.abs(deltaY) > TOUCH_SLOP) {
-                    isDragging = true
-                    if (isMovableComponent(view)) {
-                        // Apply movement while maintaining constraints
-                        applyConstrainedMovement(view, deltaX, deltaY)
-                        dragStartX = event.rawX
-                        dragStartY = event.rawY
-                        selectionOverlay.updateSelection(view)
-                        
-                        // Show live feedback during drag
-                        showSnackbar("Moviendo ${getComponentName(view)}")
-                    } else {
-                        showSnackbar("${getComponentName(view)} no se puede mover")
-                    }
-                }
                 return true
             }
 
             MotionEvent.ACTION_UP -> {
-                if (!isDragging) {
-                    // Single tap - show edit controls
-                    showEditControls(view)
-                } else {
-                    // Drag ended - save position
-                    if (isMovableComponent(view)) {
-                        saveComponentConfiguration(view)
-                        showSnackbar("Posición guardada")
-                    }
-                }
-                isDragging = false
+                // Always show edit controls on tap (no dragging/movement allowed)
+                showEditControls(view)
                 return true
             }
         }
         return false
     }
 
-    private fun applyConstrainedMovement(view: View, deltaX: Float, deltaY: Float) {
-        // For now, apply simple translation
-        // In a more complex implementation, you would check constraint relationships
-        view.translationX += deltaX
-        view.translationY += deltaY
-
-        // TODO: Implement constraint-aware movement
-        // This would involve checking the constraint relationships and updating
-        // positions relative to the constrained views
-    }
-
-    private fun isMovableComponent(view: View): Boolean {
-        // Allow movement for all UI components except edit mode controls
-        return when (view.id) {
-            // Edit mode controls - NOT movable
-            R.id.editButton,
-            R.id.editButtonsContainer,
-            R.id.cancelButton,
-            R.id.saveButton,
-            R.id.resetButton,
-            R.id.exportButton,
-            R.id.importButton,
-            R.id.editControlsPanel,
-            R.id.editControlsTitle,
-            R.id.scaleSlider,
-            R.id.textSizeSlider,
-            R.id.letterSpacingSlider,
-            R.id.textSizeControl,
-            R.id.letterSpacingControl,
-            R.id.applyChangesButton,
-            R.id.cancelChangesButton -> false
-            
-            // All other components - MOVABLE
-            else -> true
-        }
-    }
+    // Movement functions removed - only size/text editing allowed
 
     private fun alignToStepSize(value: Float, minValue: Float, stepSize: Float): Float {
         if (stepSize == 0f) return value
@@ -528,7 +502,7 @@ class EditModeManager(
         val selectedDrawable = ContextCompat.getDrawable(context, R.drawable.edit_mode_selected)
         view.background = selectedDrawable
         
-        selectionOverlay.showSelection(view)
+        selectionOverlay?.showSelection(view)
         animateSelection()
     }
 
@@ -557,12 +531,12 @@ class EditModeManager(
         selectedComponent = view
 
         // Update control panel title
-        editControlsTitle.text = "Editando: ${getComponentName(view)}"
+        editControlsTitle?.text = "Editando: ${getComponentName(view)}"
 
         // Set current values with stepSize alignment and clamping
         val alignedScale = alignToStepSize(view.scaleX, 0.5f, 0.1f)
         Log.d("EditModeManager", "Scale alineado: $alignedScale")
-        scaleSlider.value = alignedScale
+        scaleSlider?.value = alignedScale
 
         when (view) {
             is TextView -> {
@@ -570,24 +544,24 @@ class EditModeManager(
                 Log.d("EditModeManager", "TextSize original: ${view.textSize}")
                 Log.d("EditModeManager", "LetterSpacing original: ${view.letterSpacing}")
                 
-                textSizeControl.visibility = View.VISIBLE
-                letterSpacingControl.visibility = View.VISIBLE
+                textSizeControl?.visibility = View.VISIBLE
+                letterSpacingControl?.visibility = View.VISIBLE
                 
                 // Convert px to sp and clamp to slider range (12-28)
                 val textSizeInSp = view.textSize / context.resources.displayMetrics.scaledDensity
                 val clampedTextSize = textSizeInSp.coerceIn(12f, 28f)
                 val alignedTextSize = alignToStepSize(clampedTextSize, 12f, 1f)
                 Log.d("EditModeManager", "TextSize original: ${view.textSize}px = ${textSizeInSp}sp, clamped y alineado: $alignedTextSize")
-                textSizeSlider.value = alignedTextSize
+                textSizeSlider?.value = alignedTextSize
                 
                 val alignedLetterSpacing = alignToStepSize(view.letterSpacing, 0f, 0.01f)
                 Log.d("EditModeManager", "LetterSpacing alineado: $alignedLetterSpacing")
-                letterSpacingSlider.value = alignedLetterSpacing
+                letterSpacingSlider?.value = alignedLetterSpacing
             }
             is TextInputLayout -> {
                 Log.d("EditModeManager", "Configurando controles para TextInputLayout")
-                textSizeControl.visibility = View.VISIBLE
-                letterSpacingControl.visibility = View.VISIBLE
+                textSizeControl?.visibility = View.VISIBLE
+                letterSpacingControl?.visibility = View.VISIBLE
                 view.editText?.let { editText ->
                     Log.d("EditModeManager", "EditText TextSize original: ${editText.textSize}")
                     Log.d("EditModeManager", "EditText LetterSpacing original: ${editText.letterSpacing}")
@@ -597,41 +571,41 @@ class EditModeManager(
                     val clampedTextSize = textSizeInSp.coerceIn(12f, 28f)
                     val alignedTextSize = alignToStepSize(clampedTextSize, 12f, 1f)
                     Log.d("EditModeManager", "EditText TextSize original: ${editText.textSize}px = ${textSizeInSp}sp, clamped y alineado: $alignedTextSize")
-                    textSizeSlider.value = alignedTextSize
+                    textSizeSlider?.value = alignedTextSize
                     
                     val alignedLetterSpacing = alignToStepSize(editText.letterSpacing, 0f, 0.01f)
                     Log.d("EditModeManager", "EditText LetterSpacing alineado: $alignedLetterSpacing")
-                    letterSpacingSlider.value = alignedLetterSpacing
+                    letterSpacingSlider?.value = alignedLetterSpacing
                 }
             }
             else -> {
                 Log.d("EditModeManager", "Configurando controles para componente genérico (sin texto)")
-                textSizeControl.visibility = View.GONE
-                letterSpacingControl.visibility = View.GONE
+                textSizeControl?.visibility = View.GONE
+                letterSpacingControl?.visibility = View.GONE
             }
         }
 
         // Position and show control panel
         positionEditControlsPanel(view)
-        editControlsPanel.visibility = View.VISIBLE
-        editControlsPanel.animate()
-            .alpha(1f)
-            .translationY(0f)
-            .setDuration(300)
-            .start()
+        editControlsPanel?.visibility = View.VISIBLE
+        editControlsPanel?.animate()
+            ?.alpha(1f)
+            ?.translationY(0f)
+            ?.setDuration(300)
+            ?.start()
             
         Log.d("EditModeManager", "=== CONTROLES DE EDICIÓN MOSTRADOS ===")
     }
 
     private fun hideEditControls() {
-        editControlsPanel.animate()
-            .alpha(0f)
-            .translationY(100f)
-            .setDuration(200)
-            .withEndAction {
-                editControlsPanel.visibility = View.GONE
+        editControlsPanel?.animate()
+            ?.alpha(0f)
+            ?.translationY(100f)
+            ?.setDuration(200)
+            ?.withEndAction {
+                editControlsPanel?.visibility = View.GONE
             }
-            .start()
+            ?.start()
     }
 
     private fun getComponentName(view: View): String {
@@ -695,15 +669,9 @@ class EditModeManager(
     private fun saveComponentConfiguration(view: View) {
         val componentKey = getComponentKey(view)
 
-        // Save position and scale
+        // Save only scale (no position changes allowed)
         preferencesManager.setFloat(
             getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), view.scaleX
-        )
-        preferencesManager.setFloat(
-            getServiceComponentKey(COMPONENT_POSITION_X_KEY, componentKey), view.translationX
-        )
-        preferencesManager.setFloat(
-            getServiceComponentKey(COMPONENT_POSITION_Y_KEY, componentKey), view.translationY
         )
 
         // Save text properties if applicable
@@ -748,15 +716,9 @@ class EditModeManager(
             return
         }
 
-        // Load position and scale
+        // Load only scale (no position loading)
         view.scaleX = preferencesManager.getFloat(scaleKey, 1.0f)
         view.scaleY = view.scaleX
-        view.translationX = preferencesManager.getFloat(
-            getServiceComponentKey(COMPONENT_POSITION_X_KEY, componentKey), 0f
-        )
-        view.translationY = preferencesManager.getFloat(
-            getServiceComponentKey(COMPONENT_POSITION_Y_KEY, componentKey), 0f
-        )
 
         // Load text properties if applicable
         when (view) {
@@ -832,11 +794,9 @@ class EditModeManager(
     }
 
     private fun resetComponentToDefault(view: View) {
-        // Reset to match the default values used in alignToStepSize and showEditControls
+        // Reset only scale (no position reset needed)
         view.scaleX = 1.0f
         view.scaleY = 1.0f
-        view.translationX = 0f
-        view.translationY = 0f
 
         when (view) {
             is TextView -> {
@@ -1067,15 +1027,15 @@ class EditModeManager(
         Log.d("EditModeManager", "Posicionando panel de edición para ${getComponentName(targetView)}")
         
         // Wait for layout to be complete
-        editControlsPanel.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+        editControlsPanel?.viewTreeObserver?.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
-                editControlsPanel.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                editControlsPanel?.viewTreeObserver?.removeOnGlobalLayoutListener(this)
                 
                 val targetLocation = IntArray(2)
                 targetView.getLocationInWindow(targetLocation)
                 
                 val panelLocation = IntArray(2)
-                editControlsPanel.getLocationInWindow(panelLocation)
+                editControlsPanel?.getLocationInWindow(panelLocation)
                 
                 val rootLocation = IntArray(2)
                 rootLayout.getLocationInWindow(rootLocation)
@@ -1083,39 +1043,41 @@ class EditModeManager(
                 // Calculate desired position (below the target view)
                 val targetBottom = targetLocation[1] + targetView.height
                 val availableSpaceBelow = rootLayout.height + rootLocation[1] - targetBottom
-                val panelHeight = editControlsPanel.height
+                val panelHeight = editControlsPanel?.height
                 
                 Log.d("EditModeManager", "Target bottom: $targetBottom, Available space below: $availableSpaceBelow, Panel height: $panelHeight")
                 
-                val layoutParams = editControlsPanel.layoutParams as CoordinatorLayout.LayoutParams
-                
-                if (availableSpaceBelow >= panelHeight + 50) {
-                    // Position below the target view
-                    Log.d("EditModeManager", "Posicionando panel debajo del componente")
-                    layoutParams.topMargin = targetBottom - rootLocation[1] + 16
-                    layoutParams.gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
-                } else {
-                    // Not enough space below, position above or use scroll
-                    val availableSpaceAbove = targetLocation[1] - rootLocation[1]
-                    
-                    if (availableSpaceAbove >= panelHeight + 50) {
-                        // Position above the target view
-                        Log.d("EditModeManager", "Posicionando panel arriba del componente")
-                        layoutParams.topMargin = (targetLocation[1] - rootLocation[1] - panelHeight - 16).coerceAtLeast(0)
+                val layoutParams = editControlsPanel?.layoutParams as CoordinatorLayout.LayoutParams
+
+                if (panelHeight != null) {
+                    if (availableSpaceBelow >= panelHeight + 50) {
+                        // Position below the target view
+                        Log.d("EditModeManager", "Posicionando panel debajo del componente")
+                        layoutParams.topMargin = targetBottom - rootLocation[1] + 16
                         layoutParams.gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
                     } else {
-                        // Default to bottom with scroll capability
-                        Log.d("EditModeManager", "Posicionando panel en la parte inferior con scroll")
-                        layoutParams.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
-                        layoutParams.bottomMargin = 16
-                        
-                        // Scroll to make the target view visible
-                        scrollToView(targetView)
+                        // Not enough space below, position above or use scroll
+                        val availableSpaceAbove = targetLocation[1] - rootLocation[1]
+
+                        if (availableSpaceAbove >= panelHeight + 50) {
+                            // Position above the target view
+                            Log.d("EditModeManager", "Posicionando panel arriba del componente")
+                            layoutParams.topMargin = (targetLocation[1] - rootLocation[1] - panelHeight - 16).coerceAtLeast(0)
+                            layoutParams.gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
+                        } else {
+                            // Default to bottom with scroll capability
+                            Log.d("EditModeManager", "Posicionando panel en la parte inferior con scroll")
+                            layoutParams.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
+                            layoutParams.bottomMargin = 16
+
+                            // Scroll to make the target view visible
+                            scrollToView(targetView)
+                        }
                     }
                 }
                 
-                editControlsPanel.layoutParams = layoutParams
-                editControlsPanel.requestLayout()
+                editControlsPanel?.layoutParams  = layoutParams
+                editControlsPanel?.requestLayout()
             }
         })
     }
@@ -1139,6 +1101,43 @@ class EditModeManager(
                 
                 Log.d("EditModeManager", "Scrolling to position: $scrollY")
                 scroll.smoothScrollTo(0, scrollY.coerceAtLeast(0))
+            }
+        }
+    }
+
+    private fun isTextInputLayout(view: View): Boolean {
+        return view is TextInputLayout
+    }
+    
+    private fun applyTextSizeToAllTextInputs(textSize: Float) {
+        getAllEditableViews().forEach { view ->
+            if (view is TextInputLayout) {
+                view.editText?.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSize)
+                Log.d("EditModeManager", "Aplicando textSize grupal: ${textSize}sp a ${getComponentName(view)}")
+            }
+        }
+    }
+    
+    private fun applyLetterSpacingToAllTextInputs(letterSpacing: Float) {
+        getAllEditableViews().forEach { view ->
+            if (view is TextInputLayout) {
+                view.editText?.letterSpacing = letterSpacing
+                Log.d("EditModeManager", "Aplicando letterSpacing grupal: $letterSpacing a ${getComponentName(view)}")
+            }
+        }
+    }
+    
+    private fun applyScaleToAllTextInputs(scale: Float) {
+        getAllEditableViews().forEach { view ->
+            if (view is TextInputLayout) {
+                // Limit scale to prevent breaking layout constraints
+                val maxScale = 1.5f
+                val minScale = 0.8f
+                val constrainedScale = scale.coerceIn(minScale, maxScale)
+                
+                view.scaleX = constrainedScale
+                view.scaleY = constrainedScale
+                Log.d("EditModeManager", "Aplicando scale grupal: $constrainedScale a ${getComponentName(view)}")
             }
         }
     }
