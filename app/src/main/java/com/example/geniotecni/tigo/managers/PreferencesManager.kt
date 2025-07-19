@@ -4,11 +4,17 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
 import com.example.geniotecni.tigo.utils.Constants
+import com.example.geniotecni.tigo.utils.AppLogger
 
 class PreferencesManager(context: Context) {
     
     private val prefs: SharedPreferences = 
         context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+        
+    init {
+        AppLogger.i("PreferencesManager", "Inicializando PreferencesManager")
+        AppLogger.d("PreferencesManager", "Archivo de preferencias: ${Constants.PREFS_NAME}")
+    }
     
     companion object {
         // Keys
@@ -35,8 +41,13 @@ class PreferencesManager(context: Context) {
     
     // Theme
     var appTheme: Int
-        get() = prefs.getInt(KEY_THEME, THEME_SYSTEM)
+        get() {
+            val theme = prefs.getInt(KEY_THEME, THEME_SYSTEM)
+            AppLogger.d("PreferencesManager", "Obteniendo tema: $theme")
+            return theme
+        }
         set(value) {
+            AppLogger.i("PreferencesManager", "Cambiando tema: $appTheme -> $value")
             prefs.edit().putInt(KEY_THEME, value).apply()
             applyTheme(value)
         }
@@ -76,10 +87,24 @@ class PreferencesManager(context: Context) {
     
     // Apply theme
     fun applyTheme(theme: Int = appTheme) {
+        AppLogger.i("PreferencesManager", "Aplicando tema: $theme")
         when (theme) {
-            THEME_LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            THEME_DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            THEME_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            THEME_LIGHT -> {
+                AppLogger.d("PreferencesManager", "Aplicando tema claro")
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            }
+            THEME_DARK -> {
+                AppLogger.d("PreferencesManager", "Aplicando tema oscuro")
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            }
+            THEME_SYSTEM -> {
+                AppLogger.d("PreferencesManager", "Aplicando tema del sistema")
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            }
+            else -> {
+                AppLogger.w("PreferencesManager", "Tema desconocido: $theme, usando tema del sistema")
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            }
         }
     }
     
@@ -101,10 +126,13 @@ class PreferencesManager(context: Context) {
     }
     
     fun getFloat(key: String, defaultValue: Float = 0f): Float {
-        return prefs.getFloat(key, defaultValue)
+        val value = prefs.getFloat(key, defaultValue)
+        AppLogger.d("PreferencesManager", "getFloat($key, $defaultValue) = $value")
+        return value
     }
     
-    fun putFloat(key: String, value: Float) {
+    fun setFloat(key: String, value: Float) {
+        AppLogger.d("PreferencesManager", "setFloat($key, $value)")
         prefs.edit().putFloat(key, value).apply()
     }
     
@@ -124,8 +152,17 @@ class PreferencesManager(context: Context) {
         prefs.edit().putBoolean(key, value).apply()
     }
 
+    fun contains(key: String): Boolean {
+        val contains = prefs.contains(key)
+        AppLogger.d("PreferencesManager", "contains($key) = $contains")
+        return contains
+    }
+
     // Clear all preferences
     fun clearAll() {
+        AppLogger.w("PreferencesManager", "Limpiando todas las preferencias")
+        val beforeCount = prefs.all.size
         prefs.edit().clear().apply()
+        AppLogger.i("PreferencesManager", "$beforeCount preferencias eliminadas")
     }
 }

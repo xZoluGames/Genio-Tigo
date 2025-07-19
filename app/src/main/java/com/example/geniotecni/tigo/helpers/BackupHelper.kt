@@ -16,6 +16,7 @@ import java.io.File
 import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.geniotecni.tigo.utils.AppLogger
 
 class BackupHelper(private val context: Context) {
 
@@ -53,81 +54,141 @@ class BackupHelper(private val context: Context) {
     )
 
     fun performBackup(): Boolean {
+        AppLogger.i("BackupHelper", "Iniciando proceso de backup")
+        val startTime = System.currentTimeMillis()
         return try {
             val backupData = createBackupData()
+            AppLogger.logDataProcessing("BackupHelper", "Crear datos de backup", "BackupData", 1, System.currentTimeMillis() - startTime)
+            
             val backupFile = saveBackupFile(backupData)
+            AppLogger.logFileOperation("BackupHelper", "Guardar backup", backupFile?.name ?: "desconocido", backupFile != null, backupFile?.length() ?: 0)
 
             if (backupFile != null) {
                 preferencesManager.lastBackupTime = System.currentTimeMillis()
                 cleanOldBackups()
+                val totalTime = System.currentTimeMillis() - startTime
+                AppLogger.i("BackupHelper", "Backup completado exitosamente en ${totalTime}ms - Archivo: ${backupFile.name}")
                 true
             } else {
+                AppLogger.e("BackupHelper", "Error: No se pudo crear el archivo de backup")
                 false
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            AppLogger.e("BackupHelper", "Error crítico durante el backup", e)
             false
         }
     }
 
     fun restoreBackup(backupFile: File): Boolean {
+        AppLogger.i("BackupHelper", "Iniciando restauración desde: ${backupFile.name}")
+        AppLogger.logFileOperation("BackupHelper", "Leer backup", backupFile.name, true, backupFile.length())
+        val startTime = System.currentTimeMillis()
+        
         return try {
             val jsonContent = backupFile.readText()
+            AppLogger.d("BackupHelper", "Archivo JSON leído: ${jsonContent.length} caracteres")
+            
             val backupData = gson.fromJson(jsonContent, BackupData::class.java)
+            AppLogger.i("BackupHelper", "Backup parseado - Versión: ${backupData.version}, Timestamp: ${backupData.timestamp}")
 
             // Validate backup version
             if (backupData.version != BACKUP_VERSION) {
+                AppLogger.w("BackupHelper", "Versión de backup incompatible: ${backupData.version} vs $BACKUP_VERSION")
                 // Handle version mismatch if needed
             }
 
             // Restore print history
+            AppLogger.d("BackupHelper", "Restaurando historial de impresión: ${backupData.printHistory.size} elementos")
             restorePrintHistory(backupData.printHistory)
 
             // Restore preferences
+            AppLogger.d("BackupHelper", "Restaurando preferencias: ${backupData.preferences.size} elementos")
             restorePreferences(backupData.preferences)
 
             // Restore custom layouts if available
-            backupData.customLayouts?.let { restoreCustomLayouts(it) }
+            backupData.customLayouts?.let { 
+                AppLogger.d("BackupHelper", "Restaurando layouts personalizados: ${it.size} elementos")
+                restoreCustomLayouts(it) 
+            }
 
+            val totalTime = System.currentTimeMillis() - startTime
+            AppLogger.i("BackupHelper", "Restauración completada exitosamente en ${totalTime}ms")
             true
         } catch (e: Exception) {
-            e.printStackTrace()
+            AppLogger.e("BackupHelper", "Error crítico durante la restauración", e)
             false
         }
     }
 
     fun getAvailableBackups(): List<File> {
+        AppLogger.d("BackupHelper", "Buscando backups disponibles")
         val backupDir = getBackupDirectory()
+        AppLogger.d("BackupHelper", "Directorio de backups: ${backupDir.absolutePath}")
+        
         return if (backupDir.exists()) {
-            backupDir.listFiles { file ->
+            val files = backupDir.listFiles { file ->
                 file.name.startsWith(BACKUP_FILE_PREFIX) &&
                         file.name.endsWith(BACKUP_FILE_EXTENSION)
             }?.sortedByDescending { it.lastModified() } ?: emptyList()
+            AppLogger.i("BackupHelper", "Encontrados ${files.size} backups disponibles")
+            files
         } else {
+            AppLogger.w("BackupHelper", "Directorio de backups no existe: ${backupDir.absolutePath}")
             emptyList()
         }
     }
 
     fun performAutomaticBackup() {
+        AppLogger.d("BackupHelper", "Verificando si es necesario backup automático")
         val lastBackup = preferencesManager.lastBackupTime
         val now = System.currentTimeMillis()
         val oneDayInMillis = 24 * 60 * 60 * 1000
+        val timeSinceLastBackup = now - lastBackup
+        
+        AppLogger.d("BackupHelper", "Backup habilitado: ${preferencesManager.backupEnabled}")
+        AppLogger.d("BackupHelper", "Tiempo desde último backup: ${timeSinceLastBackup / 1000 / 60} minutos")
 
-        if (preferencesManager.backupEnabled && (now - lastBackup) > oneDayInMillis) {
-            performBackup()
+        if (preferencesManager.backupEnabled && timeSinceLastBackup > oneDayInMillis) {
+            AppLogger.i("BackupHelper", "Iniciando backup automático")
+            val success = performBackup()
+            AppLogger.i("BackupHelper", "Backup automático ${if (success) "exitoso" else "fallido"}")
+        } else {
+            AppLogger.d("BackupHelper", "Backup automático no necesario")
         }
     }
 
     private fun createBackupData(): BackupData {
-        return BackupData(
+        AppLogger.d("BackupHelper", "Creando datos de backup")
+        val startTime = System.currentTimeMillis()
+        
+        val deviceInfo = getDeviceInfo()
+        AppLogger.d("BackupHelper", "Información del dispositivo obtenida")
+        
+        val printHistory = printDataManager.getAllPrintData()
+        AppLogger.d("BackupHelper", "Historial de impresión obtenido: ${printHistory.size} elementos")
+        
+        val preferences = getPreferencesMap()
+        AppLogger.d("BackupHelper", "Preferencias obtenidas: ${preferences.size} elementos")
+        
+        val statistics = getStatisticsMap()
+        AppLogger.d("BackupHelper", "Estadísticas obtenidas: ${statistics.size} elementos")
+        
+        val customLayouts = getCustomLayoutsMap()
+        AppLogger.d("BackupHelper", "Layouts personalizados obtenidos: ${customLayouts.size} elementos")
+        
+        val backupData = BackupData(
             version = BACKUP_VERSION,
             timestamp = System.currentTimeMillis(),
-            deviceInfo = getDeviceInfo(),
-            printHistory = printDataManager.getAllPrintData(),
-            preferences = getPreferencesMap(),
-            statistics = getStatisticsMap(),
-            customLayouts = getCustomLayoutsMap()
+            deviceInfo = deviceInfo,
+            printHistory = printHistory,
+            preferences = preferences,
+            statistics = statistics,
+            customLayouts = customLayouts
         )
+        
+        val createTime = System.currentTimeMillis() - startTime
+        AppLogger.d("BackupHelper", "Datos de backup creados en ${createTime}ms")
+        return backupData
     }
 
     private fun getDeviceInfo(): DeviceInfo {
@@ -288,7 +349,7 @@ class BackupHelper(private val context: Context) {
                         is Float -> it
                         else -> 1.0f
                     }
-                    preferencesManager.putFloat("${service}_scale", value)
+                    preferencesManager.setFloat("${service}_scale", value)
                 }
                 config["textSize"]?.let {
                     val value = when (it) {
@@ -296,7 +357,7 @@ class BackupHelper(private val context: Context) {
                         is Float -> it
                         else -> 16f
                     }
-                    preferencesManager.putFloat("${service}_text_size", value)
+                    preferencesManager.setFloat("${service}_text_size", value)
                 }
                 config["padding"]?.let {
                     val value = when (it) {
@@ -304,7 +365,7 @@ class BackupHelper(private val context: Context) {
                         is Float -> it
                         else -> 16f
                     }
-                    preferencesManager.putFloat("${service}_padding", value)
+                    preferencesManager.setFloat("${service}_padding", value)
                 }
                 config["letterSpacing"]?.let {
                     val value = when (it) {
@@ -312,19 +373,25 @@ class BackupHelper(private val context: Context) {
                         is Float -> it
                         else -> 0f
                     }
-                    preferencesManager.putFloat("${service}_letter_spacing", value)
+                    preferencesManager.setFloat("${service}_letter_spacing", value)
                 }
             }
         }
     }
 
     private fun cleanOldBackups() {
+        AppLogger.d("BackupHelper", "Limpiando backups antiguos")
         val backups = getAvailableBackups()
         if (backups.size > MAX_BACKUPS) {
-            // Delete oldest backups
-            backups.drop(MAX_BACKUPS).forEach { file ->
-                file.delete()
+            val filesToDelete = backups.drop(MAX_BACKUPS)
+            AppLogger.i("BackupHelper", "Eliminando ${filesToDelete.size} backups antiguos (máximo: $MAX_BACKUPS)")
+            
+            filesToDelete.forEach { file ->
+                val deleted = file.delete()
+                AppLogger.logFileOperation("BackupHelper", "Eliminar backup antiguo", file.name, deleted)
             }
+        } else {
+            AppLogger.d("BackupHelper", "No es necesario limpiar backups (${backups.size}/$MAX_BACKUPS)")
         }
     }
 }

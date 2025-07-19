@@ -25,6 +25,7 @@ import com.example.geniotecni.tigo.ui.adapters.ServiceAdapter
 import com.example.geniotecni.tigo.ui.adapters.ServiceItem
 import com.example.geniotecni.tigo.ui.adapters.ServiceAdapter.Companion.toServiceItems
 import com.example.geniotecni.tigo.utils.Constants
+import com.example.geniotecni.tigo.utils.AppLogger
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.appbar.MaterialToolbar
@@ -62,10 +63,14 @@ class SearchServices : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(TAG, "SearchServices onCreate iniciado")
+        AppLogger.i(TAG, "=== INICIANDO SEARCH SERVICES ===")
+        AppLogger.logMemoryUsage(TAG, "SearchServices onCreate inicio")
 
         try {
+            val startTime = System.currentTimeMillis()
+            AppLogger.i(TAG, "Cargando layout activity_main")
             setContentView(R.layout.activity_main)
+            AppLogger.i(TAG, "Layout cargado en ${System.currentTimeMillis() - startTime}ms")
 
             setupWindowInsets()
             initializeViews()
@@ -75,10 +80,11 @@ class SearchServices : AppCompatActivity() {
             setupFAB()
             requestPermissions()
 
-            Log.d(TAG, "SearchServices onCreate completado exitosamente")
+            AppLogger.i(TAG, "=== SEARCH SERVICES INICIALIZADO CORRECTAMENTE ===")
+            AppLogger.logMemoryUsage(TAG, "SearchServices onCreate final")
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error en SearchServices onCreate", e)
+            AppLogger.e(TAG, "Error crítico en SearchServices onCreate", e)
             throw e
         }
     }
@@ -106,7 +112,8 @@ class SearchServices : AppCompatActivity() {
     }
 
     private fun initializeViews() {
-        Log.d(TAG, "Inicializando vistas")
+        AppLogger.i(TAG, "Inicializando vistas de SearchServices")
+        val startTime = System.currentTimeMillis()
 
         loadingHelper = LoadingAnimationHelper(this)
 
@@ -136,11 +143,13 @@ class SearchServices : AppCompatActivity() {
         // FAB
         fabQuickAdd = findViewById(R.id.fabQuickAdd)
 
-        Log.d(TAG, "Vistas inicializadas correctamente")
+        val initTime = System.currentTimeMillis() - startTime
+        AppLogger.i(TAG, "Vistas inicializadas correctamente en ${initTime}ms")
     }
 
     private fun setupRecyclerView() {
-        Log.d(TAG, "Configurando RecyclerView")
+        AppLogger.i(TAG, "Configurando RecyclerView")
+        val startTime = System.currentTimeMillis()
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.setHasFixedSize(true)
@@ -159,13 +168,16 @@ class SearchServices : AppCompatActivity() {
 
         // Create service items
         val serviceItems = servicios.toList().toServiceItems()
+        AppLogger.logDataProcessing(TAG, "Crear elementos de servicio", "ServiceItems", serviceItems.size)
 
         serviceAdapter = ServiceAdapter(
             services = serviceItems,
             onItemClick = { service ->
+                AppLogger.logUserAction(TAG, "Selección de servicio desde RecyclerView", service.name)
                 navigateToMainActivity(service)
             }
         )
+        AppLogger.d(TAG, "ServiceAdapter configurado")
 
         recyclerView.adapter = serviceAdapter
 
@@ -173,28 +185,36 @@ class SearchServices : AppCompatActivity() {
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 if (dy > 0 && fabQuickAdd.isExtended) {
+                    AppLogger.d(TAG, "FAB contraido por scroll hacia abajo")
                     fabQuickAdd.shrink()
                 } else if (dy < 0 && !fabQuickAdd.isExtended) {
+                    AppLogger.d(TAG, "FAB extendido por scroll hacia arriba")
                     fabQuickAdd.extend()
                 }
             }
         })
+        AppLogger.d(TAG, "Scroll listener configurado")
 
-        Log.d(TAG, "RecyclerView configurado con ${serviceItems.size} servicios")
+        val setupTime = System.currentTimeMillis() - startTime
+        AppLogger.i(TAG, "RecyclerView configurado con ${serviceItems.size} servicios en ${setupTime}ms")
     }
 
     private fun setupSearchFunctionality() {
-        Log.d(TAG, "Configurando funcionalidad de búsqueda")
+        AppLogger.i(TAG, "Configurando funcionalidad de búsqueda")
+        val startTime = System.currentTimeMillis()
 
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filterServices(s.toString())
+                val query = s.toString()
+                AppLogger.d(TAG, "Texto de búsqueda cambiado: '$query'")
+                filterServices(query)
             }
 
             override fun afterTextChanged(s: Editable?) {}
         })
+        AppLogger.d(TAG, "TextWatcher configurado")
 
         // Setup autocomplete suggestions
         val suggestions = servicios.toList()
@@ -208,7 +228,9 @@ class SearchServices : AppCompatActivity() {
         // Handle item click from autocomplete
         searchEditText.setOnItemClickListener { _, _, position, _ ->
             val selectedService = adapter.getItem(position)
+            AppLogger.logUserAction(TAG, "Selección desde autocompletado", "Posición: $position")
             selectedService?.let {
+                AppLogger.d(TAG, "Servicio seleccionado desde autocompletado: $it")
                 val serviceItem = servicios.toList().toServiceItems()
                     .find { item -> item.name == it }
                 serviceItem?.let { item ->
@@ -216,10 +238,18 @@ class SearchServices : AppCompatActivity() {
                 }
             }
         }
+        
+        val setupTime = System.currentTimeMillis() - startTime
+        AppLogger.i(TAG, "Funcionalidad de búsqueda configurada en ${setupTime}ms")
     }
 
     private fun setupQuickActions() {
-        Log.d(TAG, "Configurando acciones rápidas")
+        AppLogger.i(TAG, "Configurando acciones rápidas")
+        val startTime = System.currentTimeMillis()
+
+        // Diagnóstico detallado de iconos
+        AppLogger.d(TAG, "Iniciando diagnóstico de iconos")
+        diagnosticarIconos()
 
         // Aplicar animación de entrada a las tarjetas
         val slideIn = AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left)
@@ -230,12 +260,14 @@ class SearchServices : AppCompatActivity() {
 
         // Print History
         cardPrintHistory.setOnClickListener {
+            AppLogger.logButtonClick(TAG, "CardPrintHistory", "Navegar a historial de impresión")
             it.animate()
                 .scaleX(0.95f)
                 .scaleY(0.95f)
                 .setDuration(100)
                 .withEndAction {
                     it.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    AppLogger.logNavigationStart(TAG, "SearchServices", "PrintHistoryActivity")
                     loadingHelper.showLoadingAndNavigate(
                         targetActivity = PrintHistoryActivity::class.java,
                         message = "Cargando historial...",
@@ -247,12 +279,14 @@ class SearchServices : AppCompatActivity() {
 
         // Statistics
         cardStatistics.setOnClickListener {
+            AppLogger.logButtonClick(TAG, "CardStatistics", "Navegar a estadísticas")
             it.animate()
                 .scaleX(0.95f)
                 .scaleY(0.95f)
                 .setDuration(100)
                 .withEndAction {
                     it.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    AppLogger.logNavigationStart(TAG, "SearchServices", "StatisticsActivity")
                     loadingHelper.showLoadingAndNavigate(
                         targetActivity = StatisticsActivity::class.java,
                         message = "Calculando estadísticas...",
@@ -264,12 +298,14 @@ class SearchServices : AppCompatActivity() {
 
         // Settings
         cardSettings.setOnClickListener {
+            AppLogger.logButtonClick(TAG, "CardSettings", "Navegar a configuraciones")
             it.animate()
                 .scaleX(0.95f)
                 .scaleY(0.95f)
                 .setDuration(100)
                 .withEndAction {
                     it.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    AppLogger.logNavigationStart(TAG, "SearchServices", "SettingsActivity")
                     loadingHelper.showLoadingAndNavigate(
                         targetActivity = SettingsActivity::class.java,
                         message = "Abriendo configuración...",
@@ -281,6 +317,7 @@ class SearchServices : AppCompatActivity() {
 
         // Bluetooth
         cardBluetooth.setOnClickListener {
+            AppLogger.logButtonClick(TAG, "CardBluetooth", "Navegar a configuración Bluetooth")
             it.animate()
                 .scaleX(0.95f)
                 .scaleY(0.95f)
@@ -291,27 +328,38 @@ class SearchServices : AppCompatActivity() {
                 }
                 .start()
         }
+        
+        val setupTime = System.currentTimeMillis() - startTime
+        AppLogger.i(TAG, "Acciones rápidas configuradas en ${setupTime}ms")
     }
 
     private fun setupFAB() {
+        AppLogger.d(TAG, "Configurando FAB")
         fabQuickAdd.setOnClickListener {
+            AppLogger.logButtonClick(TAG, "FABQuickAdd", "Acceso rápido al servicio más usado")
             // Navigate to the most used service
             val mostUsedService = servicios.toList().toServiceItems().firstOrNull()
             mostUsedService?.let {
+                AppLogger.d(TAG, "Navegando al servicio más usado: ${it.name}")
                 navigateToMainActivity(it)
             }
         }
+        AppLogger.d(TAG, "FAB configurado")
     }
 
     private fun filterServices(query: String) {
+        val startTime = System.currentTimeMillis()
         val filteredServices = servicios.filter { service ->
             service.contains(query, ignoreCase = true)
         }
+        val filterTime = System.currentTimeMillis() - startTime
+        AppLogger.logSearchQuery(TAG, query, filteredServices.size, filterTime)
         serviceAdapter.updateServices(filteredServices)
     }
 
     private fun navigateToMainActivity(service: ServiceItem) {
-        Log.d(TAG, "Navegando a MainActivity con servicio: ${service.name}")
+        AppLogger.logNavigationStart(TAG, "SearchServices", "MainActivity", "Servicio: ${service.name}")
+        AppLogger.logServiceSelection(TAG, service.name, service.serviceType)
 
         loadingHelper.showLoadingAndNavigate(
             targetActivity = MainActivity::class.java,
@@ -319,19 +367,26 @@ class SearchServices : AppCompatActivity() {
             duration = 1200L
         ) {
             putExtra("selectedService", service)
+            AppLogger.d(TAG, "Extra 'selectedService' agregado al Intent")
         }
     }
 
     private fun checkBluetoothAndNavigate() {
+        AppLogger.i(TAG, "Verificando estado Bluetooth")
         val sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE)
         val deviceAddress = sharedPreferences.getString("BluetoothDeviceAddress", null)
+        AppLogger.d(TAG, "Dirección Bluetooth guardada: ${deviceAddress ?: "ninguna"}")
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         val device = deviceAddress?.let { bluetoothAdapter?.getRemoteDevice(it) }
 
         if (deviceAddress == null || device == null) {
+            AppLogger.w(TAG, "No se encontró dispositivo Bluetooth configurado")
             showSnackbar("No se encontró dispositivo Bluetooth configurado")
+        } else {
+            AppLogger.i(TAG, "Dispositivo Bluetooth encontrado: ${device.name ?: device.address}")
         }
 
+        AppLogger.logNavigationStart(TAG, "SearchServices", "Bt")
         loadingHelper.showLoadingAndNavigate(
             targetActivity = Bt::class.java,
             message = "Configurando Bluetooth...",
@@ -377,9 +432,151 @@ class SearchServices : AppCompatActivity() {
             }
 
             if (deniedPermissions.isNotEmpty()) {
-                showSnackbar("Algunos permisos fueron denegados")
+                val criticalPermissions = deniedPermissions.filter {
+                    it == Manifest.permission.CALL_PHONE || 
+                    it == Manifest.permission.READ_SMS ||
+                    it == Manifest.permission.BLUETOOTH_CONNECT ||
+                    it == Manifest.permission.BLUETOOTH_SCAN
+                }
+
+                if (criticalPermissions.isNotEmpty()) {
+                    showPermissionExplanationDialog(criticalPermissions)
+                } else {
+                    showSnackbar("Algunos permisos opcionales fueron denegados")
+                }
+            } else {
+                showSnackbar("Todos los permisos han sido otorgados")
             }
         }
+    }
+
+    private fun showPermissionExplanationDialog(deniedPermissions: List<String>) {
+        val permissionNames = deniedPermissions.map { permission ->
+            when (permission) {
+                Manifest.permission.CALL_PHONE -> "Realizar llamadas telefónicas"
+                Manifest.permission.READ_SMS -> "Leer mensajes SMS"
+                Manifest.permission.BLUETOOTH_CONNECT -> "Conectar con dispositivos Bluetooth"
+                Manifest.permission.BLUETOOTH_SCAN -> "Buscar dispositivos Bluetooth"
+                else -> permission
+            }
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Permisos Requeridos")
+            .setMessage("La aplicación necesita los siguientes permisos para funcionar correctamente:\n\n${permissionNames.joinToString("\n• ", "• ")}\n\nPuedes habilitarlos en Configuración > Aplicaciones > Genio Tigo > Permisos")
+            .setPositiveButton("Ir a Configuración") { _, _ ->
+                openAppSettings()
+            }
+            .setNegativeButton("Continuar") { _, _ ->
+                showSnackbar("Algunas funciones pueden no estar disponibles")
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = android.net.Uri.fromParts("package", packageName, null)
+        }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            showSnackbar("No se pudo abrir la configuración")
+        }
+    }
+
+    private fun diagnosticarIconos() {
+        AppLogger.i(TAG, "=== DIAGNÓSTICO DE ICONOS ===")
+        val startTime = System.currentTimeMillis()
+        
+        // Verificar existencia de vistas de iconos
+        val printIcon = findViewById<android.widget.ImageView>(R.id.print)
+        val statsIcon = findViewById<android.widget.ImageView>(R.id.stats)
+        val settingsIcon = findViewById<android.widget.ImageView>(R.id.settings)
+        val btIcon = findViewById<android.widget.ImageView>(R.id.bt)
+        
+        AppLogger.d(TAG, "Print Icon encontrado: ${printIcon != null}")
+        AppLogger.d(TAG, "Stats Icon encontrado: ${statsIcon != null}")
+        AppLogger.d(TAG, "Settings Icon encontrado: ${settingsIcon != null}")
+        AppLogger.d(TAG, "BT Icon encontrado: ${btIcon != null}")
+        
+        // Verificar drawable resources
+        printIcon?.let { icon ->
+            AppLogger.debugViewState(TAG, "Print Icon", icon)
+            
+            val drawable = ContextCompat.getDrawable(this, R.drawable.ic_print)
+            AppLogger.logImageLoad(TAG, "ic_print", R.drawable.ic_print, drawable != null)
+            
+            // Intentar aplicar el tint manualmente
+            try {
+                val color = ContextCompat.getColor(this, R.color.md_theme_light_primary)
+                icon.setColorFilter(color)
+                AppLogger.i(TAG, "ColorFilter aplicado a Print Icon - Color: $color")
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Error aplicando ColorFilter a Print Icon", e)
+            }
+        }
+        
+        statsIcon?.let { icon ->
+            AppLogger.debugViewState(TAG, "Stats Icon", icon)
+            
+            val drawable = ContextCompat.getDrawable(this, R.drawable.ic_chart)
+            AppLogger.logImageLoad(TAG, "ic_chart", R.drawable.ic_chart, drawable != null)
+            
+            // Intentar aplicar el tint manualmente
+            try {
+                val color = ContextCompat.getColor(this, R.color.md_theme_light_secondary)
+                icon.setColorFilter(color)
+                AppLogger.i(TAG, "ColorFilter aplicado a Stats Icon - Color: $color")
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Error aplicando ColorFilter a Stats Icon", e)
+            }
+        }
+        
+        settingsIcon?.let { icon ->
+            AppLogger.debugViewState(TAG, "Settings Icon", icon)
+            
+            val drawable = ContextCompat.getDrawable(this, R.drawable.ic_settings)
+            AppLogger.logImageLoad(TAG, "ic_settings", R.drawable.ic_settings, drawable != null)
+            
+            // Intentar aplicar el tint manualmente
+            try {
+                val color = ContextCompat.getColor(this, R.color.md_theme_light_tertiary)
+                icon.setColorFilter(color)
+                AppLogger.i(TAG, "ColorFilter aplicado a Settings Icon - Color: $color")
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Error aplicando ColorFilter a Settings Icon", e)
+            }
+        }
+        
+        btIcon?.let { icon ->
+            AppLogger.debugViewState(TAG, "BT Icon", icon)
+            
+            val drawable = ContextCompat.getDrawable(this, R.drawable.ic_bluetooth)
+            AppLogger.logImageLoad(TAG, "ic_bluetooth", R.drawable.ic_bluetooth, drawable != null)
+            
+            // Intentar aplicar el tint manualmente
+            try {
+                val color = ContextCompat.getColor(this, R.color.status_info)
+                icon.setColorFilter(color)
+                AppLogger.i(TAG, "ColorFilter aplicado a BT Icon - Color: $color")
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Error aplicando ColorFilter a BT Icon", e)
+            }
+        }
+        
+        // Verificar colores disponibles
+        try {
+            AppLogger.debugColorValue(TAG, "md_theme_light_primary", ContextCompat.getColor(this, R.color.md_theme_light_primary))
+            AppLogger.debugColorValue(TAG, "md_theme_light_secondary", ContextCompat.getColor(this, R.color.md_theme_light_secondary))
+            AppLogger.debugColorValue(TAG, "md_theme_light_tertiary", ContextCompat.getColor(this, R.color.md_theme_light_tertiary))
+            AppLogger.debugColorValue(TAG, "status_info", ContextCompat.getColor(this, R.color.status_info))
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Error obteniendo colores del tema", e)
+        }
+        
+        val diagnosticTime = System.currentTimeMillis() - startTime
+        AppLogger.i(TAG, "=== FIN DIAGNÓSTICO DE ICONOS (${diagnosticTime}ms) ===")
     }
 
     private fun showSnackbar(message: String) {

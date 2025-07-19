@@ -1,14 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
         android:shape="rectangle">
 
+    <!-- Borde punteado azul -->
     <stroke
-            android:width="3dp"
-            android:color="@color/md_theme_light_primary"
-            android:dashWidth="8dp"
-            android:dashGap="4dp" />
+            android:width="2dp"
+            android:color="#2196F3"
+            android:dashWidth="10dp"
+            android:dashGap="5dp" />
 
+    <!-- Esquinas redondeadas -->
     <corners android:radius="8dp" />
 
-    <solid android:color="@color/black_overlay_light" />
+    <!-- Fondo transparente -->
+    <solid android:color="@android:color/transparent" />
 
 </shape>
