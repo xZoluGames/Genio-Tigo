@@ -6,12 +6,11 @@ import com.example.geniotecni.tigo.data.repository.TransactionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.util.*
 
 class StatisticsManager(context: Context) {
 
     private val database = AppDatabase.getDatabase(context)
-    private val repository = TransactionRepository(database.transactionDao())
+    private val repository = TransactionRepository(database.transactionDao(), context)
 
     data class Statistics(
         val totalTransactions: Int = 0,

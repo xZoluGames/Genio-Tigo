@@ -34,6 +34,49 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
+            <!-- Search Bar -->
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/searchCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    app:cardElevation="2dp"
+                    app:cardCornerRadius="8dp"
+                    android:visibility="gone">
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/searchEditText"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:hint="Buscar por cualquier dato..."
+                            android:imeOptions="actionSearch"
+                            android:inputType="text"
+                            android:singleLine="true"
+                            android:background="@android:color/transparent"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                            android:id="@+id/clearSearchButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            app:icon="@drawable/ic_clear"
+                            app:iconTint="@color/md_theme_light_onSurfaceVariant" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerViewPrintHistory"

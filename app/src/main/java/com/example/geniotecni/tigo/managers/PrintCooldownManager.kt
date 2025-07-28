@@ -1,18 +1,18 @@
 package com.example.geniotecni.tigo.managers
 
 import android.content.Context
+import com.example.geniotecni.tigo.utils.BaseManager
+import com.example.geniotecni.tigo.utils.AppConfig
 import com.example.geniotecni.tigo.utils.showToast
 import java.util.*
 
-class PrintCooldownManager(private val context: Context) {
-    
-    private val preferencesManager = PreferencesManager(context)
+class PrintCooldownManager(context: Context) : BaseManager(context, "PrintCooldownManager") {
     
     companion object {
         private const val PRINT_COUNT_KEY = "print_count"
         private const val LAST_PRINT_TIME_KEY = "last_print_time"
         private const val COOLDOWN_MINUTES = 5L
-        private const val MAX_PRINTS_PER_PERIOD = 10 // Maximum prints allowed in cooldown period
+        private const val MAX_PRINTS_PER_PERIOD = 10
     }
     
     data class PrintStatus(
@@ -24,8 +24,8 @@ class PrintCooldownManager(private val context: Context) {
     
     fun canPrint(): PrintStatus {
         val currentTime = System.currentTimeMillis()
-        val lastPrintTime = preferencesManager.getLong(LAST_PRINT_TIME_KEY, 0L)
-        val printCount = preferencesManager.getInt(PRINT_COUNT_KEY, 0)
+        val lastPrintTime = getLong(LAST_PRINT_TIME_KEY, 0L)
+        val printCount = getInt(PRINT_COUNT_KEY, 0)
         
         // If it's been more than cooldown period, reset counter
         val cooldownMillis = COOLDOWN_MINUTES * 60L * 1000L
@@ -68,11 +68,11 @@ class PrintCooldownManager(private val context: Context) {
         }
         
         val currentTime = System.currentTimeMillis()
-        val currentCount = preferencesManager.getInt(PRINT_COUNT_KEY, 0)
+        val currentCount = getInt(PRINT_COUNT_KEY, 0)
         
         // Update counters
-        preferencesManager.putInt(PRINT_COUNT_KEY, currentCount + 1)
-        preferencesManager.putLong(LAST_PRINT_TIME_KEY, currentTime)
+        savePreference(PRINT_COUNT_KEY, currentCount + 1)
+        savePreference(LAST_PRINT_TIME_KEY, currentTime)
         
         // Show remaining prints
         val newCount = currentCount + 1
@@ -99,13 +99,13 @@ class PrintCooldownManager(private val context: Context) {
     }
     
     fun resetPrintCount() {
-        preferencesManager.putInt(PRINT_COUNT_KEY, 0)
-        preferencesManager.putLong(LAST_PRINT_TIME_KEY, 0L)
+        savePreference(PRINT_COUNT_KEY, 0)
+        savePreference(LAST_PRINT_TIME_KEY, 0L)
     }
     
     fun getTimeUntilReset(): Long {
         val currentTime = System.currentTimeMillis()
-        val lastPrintTime = preferencesManager.getLong(LAST_PRINT_TIME_KEY, 0L)
+        val lastPrintTime = getLong(LAST_PRINT_TIME_KEY, 0L)
         val timeSinceLastPrint = currentTime - lastPrintTime
         val cooldownTime = COOLDOWN_MINUTES * 60L * 1000L
         

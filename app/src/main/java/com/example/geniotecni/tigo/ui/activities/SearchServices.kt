@@ -8,10 +8,10 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.View
-import android.view.WindowManager
 import android.view.animation.AnimationUtils
+import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -20,12 +20,14 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.geniotecni.tigo.R
+import com.example.geniotecni.tigo.data.repository.OptimizedServiceRepository
 import com.example.geniotecni.tigo.helpers.LoadingAnimationHelper
-import com.example.geniotecni.tigo.ui.adapters.ServiceAdapter
+import com.example.geniotecni.tigo.ui.adapters.OptimizedServiceAdapter
+import com.example.geniotecni.tigo.ui.adapters.OptimizedServiceAdapter.Companion.toServiceItems
 import com.example.geniotecni.tigo.ui.adapters.ServiceItem
-import com.example.geniotecni.tigo.ui.adapters.ServiceAdapter.Companion.toServiceItems
-import com.example.geniotecni.tigo.utils.Constants
+import com.example.geniotecni.tigo.ui.viewmodels.SearchServicesViewModel
 import com.example.geniotecni.tigo.utils.AppLogger
+import com.example.geniotecni.tigo.utils.Constants
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.appbar.MaterialToolbar
@@ -34,7 +36,50 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
+import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * 🔍 ACTIVIDAD DE BÚSQUEDA DE SERVICIOS - Hub Central de Navegación
+ * 
+ * PROPÓSITO PRINCIPAL:
+ * - Actividad principal para búsqueda y selección de servicios disponibles
+ * - Hub central de navegación hacia todas las funcionalidades de la app
+ * - Interfaz optimizada con Material Design 3 y animaciones fluidas
+ * - Punto de entrada principal para la experiencia de usuario
+ * 
+ * FUNCIONALIDADES PRINCIPALES:
+ * - Búsqueda inteligente con autocompletado de servicios
+ * - Lista adaptativa que muestra servicios populares primero
+ * - Acciones rápidas para funciones frecuentes (historial, estadísticas, etc.)
+ * - Configuración automática de permisos críticos
+ * - Navegación optimizada con efectos de carga personalizados
+ * 
+ * ARQUITECTURA DE UI:
+ * - CollapsingToolbarLayout para experiencia inmersiva
+ * - RecyclerView optimizado con OptimizedServiceAdapter
+ * - FloatingActionButton inteligente que se adapta al scroll
+ * - MaterialCardViews con animaciones táctiles
+ * - Búsqueda en tiempo real con filtrado instantáneo
+ * 
+ * GESTIÓN DE PERMISOS:
+ * - Solicitud automática de permisos críticos (CALL_PHONE, READ_SMS, Bluetooth)
+ * - Manejo inteligente de permisos denegados con explicaciones contextuales
+ * - Navegación a configuración del sistema para permisos complejos
+ * 
+ * OPTIMIZACIONES DE RENDIMIENTO:
+ * - Lazy loading de servicios con estrategia "Ver más"
+ * - Animaciones suaves con timings optimizados
+ * - Diagnóstico automático de recursos para debugging
+ * - Memory management con LoadingAnimationHelper
+ * 
+ * CONEXIONES ARQUITECTÓNICAS:
+ * - CONSUME: OptimizedServiceRepository para datos de servicios
+ * - UTILIZA: OptimizedServiceAdapter para renderizado eficiente
+ * - NAVEGA A: MainActivity, PrintHistoryActivity, SettingsActivity, etc.
+ * - GESTIONA: LoadingAnimationHelper para transiciones suaves
+ * - COORDINA: Sistema de permisos para funcionalidad completa
+ */
+@AndroidEntryPoint
 class SearchServices : AppCompatActivity() {
 
     companion object {
@@ -44,7 +89,13 @@ class SearchServices : AppCompatActivity() {
 
     private val servicios = Constants.SERVICE_NAMES
     private var showAllServices = false // Control para mostrar todos los servicios
-    private val reseteoClienteIndex = 7 // Índice del servicio "Reseteo de Cliente"
+    private val reseteoClienteIndex = 75 // Índice del servicio "Reseteo de Cliente"
+    
+    // Use new architecture components
+    private val serviceRepository = OptimizedServiceRepository.getInstance()
+    
+    // ViewModel with dependency injection
+    private val viewModel: SearchServicesViewModel by viewModels()
 
     // UI Components
     private lateinit var appBarLayout: AppBarLayout
@@ -53,7 +104,7 @@ class SearchServices : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var searchInputLayout: TextInputLayout
     private lateinit var searchEditText: MaterialAutoCompleteTextView
-    private lateinit var serviceAdapter: ServiceAdapter
+    private lateinit var serviceAdapter: OptimizedServiceAdapter
     private lateinit var loadingHelper: LoadingAnimationHelper
     private lateinit var fabQuickAdd: ExtendedFloatingActionButton
 
@@ -117,7 +168,7 @@ class SearchServices : AppCompatActivity() {
         AppLogger.i(TAG, "Inicializando vistas de SearchServices")
         val startTime = System.currentTimeMillis()
 
-        loadingHelper = LoadingAnimationHelper(this)
+        loadingHelper = LoadingAnimationHelper(this, this)
 
         // App bar components
         appBarLayout = findViewById(R.id.appBarLayout)
@@ -172,20 +223,23 @@ class SearchServices : AppCompatActivity() {
         val serviceItems = getVisibleServices()
         AppLogger.logDataProcessing(TAG, "Crear elementos de servicio", "ServiceItems", serviceItems.size)
 
-        serviceAdapter = ServiceAdapter(
+        serviceAdapter = OptimizedServiceAdapter(
             services = serviceItems,
             onItemClick = { service ->
                 AppLogger.logUserAction(TAG, "Selección de servicio desde RecyclerView", service.name)
-                if (service.name == "Ver más") {
-                    AppLogger.i(TAG, "Botón 'Ver más' presionado - expandiendo lista completa")
-                    showAllServices = true
-                    updateVisibleServices()
-                } else {
-                    navigateToMainActivity(service)
-                }
+                navigateToMainActivity(service)
+            },
+            onViewMoreClick = {
+                val currentCount = serviceAdapter.itemCount
+                AppLogger.i(TAG, "Botón 'Ver más' presionado - expandiendo lista completa")
+                AppLogger.d(TAG, "Servicios actuales: $currentCount, showAllServices: $showAllServices -> true")
+                showAllServices = true
+                updateVisibleServices()
+                val newCount = serviceAdapter.itemCount
+                AppLogger.i(TAG, "Lista expandida: $currentCount -> $newCount servicios (+${newCount - currentCount} nuevos)")
             }
         )
-        AppLogger.d(TAG, "ServiceAdapter configurado")
+        AppLogger.d(TAG, "OptimizedServiceAdapter configurado")
 
         recyclerView.adapter = serviceAdapter
 
@@ -362,11 +416,9 @@ class SearchServices : AppCompatActivity() {
             // Si no hay búsqueda, mostrar servicios según estado actual
             serviceAdapter.updateServices(getVisibleServices())
         } else {
-            // Si hay búsqueda, mostrar todos los servicios que coincidan
-            val filteredServices = servicios.filter { service ->
-                service.contains(query, ignoreCase = true)
-            }
-            serviceAdapter.updateServices(filteredServices.toServiceItems())
+            // Si hay búsqueda, usar ServiceRepository para filtrar
+            val filteredServices = serviceRepository.searchServices(query)
+            serviceAdapter.updateServices(filteredServices)
         }
         
         val filterTime = System.currentTimeMillis() - startTime
@@ -377,13 +429,11 @@ class SearchServices : AppCompatActivity() {
         return if (showAllServices) {
             // Mostrar todos los servicios (sin botón "Ver más")
             AppLogger.d(TAG, "Mostrando todos los ${servicios.size} servicios")
-            servicios.toList().toServiceItems()
+            serviceRepository.getAllServices()
         } else {
-            // Mostrar solo hasta "Reseteo de Cliente" (índice 7) + botón "Ver más"
-            val visibleServices = servicios.toList().take(reseteoClienteIndex + 1).toMutableList()
-            visibleServices.add("Ver más")
-            AppLogger.d(TAG, "Mostrando ${visibleServices.size} servicios (hasta reseteo + Ver más)")
-            visibleServices.toServiceItems()
+            // Mostrar solo hasta "Reseteo de Cliente" + botón "Ver más"
+            AppLogger.d(TAG, "Mostrando servicios limitados hasta reseteo + Ver más")
+            serviceRepository.getServicesWithViewMore(15) // Show first 16 services (0-15) + "Ver más"
         }
     }
     
@@ -468,6 +518,7 @@ class SearchServices : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,

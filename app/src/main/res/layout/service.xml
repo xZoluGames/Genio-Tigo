@@ -17,21 +17,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                app:navigationIcon="@drawable/ic_arrow_back">
-                
-            <!-- Edit Button in Toolbar -->
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/editButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="end"
-                    android:layout_marginEnd="16dp"
-                    app:srcCompat="@drawable/ic_edit"
-                    app:backgroundTint="@color/md_theme_light_primary"
-                    app:tint="@color/white"
-                    app:fabSize="mini" />
-                    
-        </com.google.android.material.appbar.MaterialToolbar>
+                app:navigationIcon="@drawable/ic_arrow_back" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -177,7 +163,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:inputType="number"
-                                android:maxLength="8" />
+                                android:maxLength="10" />
 
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -241,17 +227,6 @@
                                 style="@style/Widget.Material3.Button.OutlinedButton"
                                 android:layout_marginBottom="12dp" />
 
-                        <!-- View More Button (only for Reset Client service) -->
-                        <com.google.android.material.button.MaterialButton
-                                android:id="@+id/viewMoreButton"
-                                android:layout_width="match_parent"
-                                android:layout_height="56dp"
-                                android:text="Ver más"
-                                android:textAllCaps="false"
-                                app:icon="@drawable/ic_chevron_right"
-                                app:iconGravity="end"
-                                style="@style/Widget.Material3.Button.TextButton"
-                                android:visibility="gone" />
 
                     </LinearLayout>
 
@@ -263,71 +238,93 @@
 
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Edit Button (FAB) positioned at bottom right -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/editButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        app:srcCompat="@drawable/ic_edit"
+        app:backgroundTint="@color/md_theme_light_primary"
+        app:tint="@color/white"
+        app:fabSize="normal"
+        app:elevation="6dp" />
 
     <!-- Edit Mode Controls (Initially Hidden) -->
-    <LinearLayout
-            android:id="@+id/editButtonsContainer"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/editButtonsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:visibility="gone"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="12dp"
+        app:cardBackgroundColor="@color/md_theme_light_surface">
+
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="top"
-            android:layout_margin="16dp"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:visibility="gone"
-            android:background="@drawable/rounded_card_background"
-            android:padding="8dp">
+            android:scrollbars="none"
+            android:fadeScrollbars="true">
 
-        <com.google.android.material.button.MaterialButton
-                android:id="@+id/cancelButton"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
-                android:text="Cancelar"
-                app:icon="@drawable/ic_close"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                android:orientation="horizontal"
+                android:padding="12dp">
 
-        <com.google.android.material.button.MaterialButton
-                android:id="@+id/saveButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_margin="4dp"
-                android:text="Guardar"
-                app:icon="@drawable/ic_save"
-                style="@style/Widget.Material3.Button" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/saveButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="Guardar"
+                    android:textSize="14sp"
+                    app:iconSize="18dp"
+                    app:icon="@drawable/ic_save"
+                    style="@style/Widget.Material3.Button" />
 
-        <com.google.android.material.button.MaterialButton
-                android:id="@+id/resetButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_margin="4dp"
-                android:layout_weight="1"
-                android:text="Reset"
-                app:icon="@drawable/ic_reset"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/resetButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="Reset"
+                    android:textSize="14sp"
+                    app:iconSize="18dp"
+                    app:icon="@drawable/ic_reset"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
 
-        <com.google.android.material.button.MaterialButton
-                android:id="@+id/exportButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_margin="4dp"
-                android:layout_weight="1"
-                android:text="Exportar"
-                app:icon="@drawable/ic_export"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/exportButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="Exportar"
+                    android:textSize="14sp"
+                    app:iconSize="18dp"
+                    app:icon="@drawable/ic_export"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
 
-        <com.google.android.material.button.MaterialButton
-                android:id="@+id/importButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_weight="1"
-                android:text="Importar"
-                app:icon="@drawable/ic_import"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/importButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Importar"
+                    android:textSize="14sp"
+                    app:iconSize="18dp"
+                    app:icon="@drawable/ic_import"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
 
-    </LinearLayout>
+            </LinearLayout>
+
+        </HorizontalScrollView>
+
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Edit Controls Panel (Initially Hidden) -->
     <com.google.android.material.card.MaterialCardView
@@ -368,6 +365,7 @@
 
             <!-- Scale Control -->
             <LinearLayout
+                    android:id="@+id/scaleControl"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"

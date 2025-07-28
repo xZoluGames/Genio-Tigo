@@ -5,11 +5,11 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.example.geniotecni.tigo.R
+import com.example.geniotecni.tigo.utils.BaseActivity
+// import com.example.geniotecni.tigo.core.extensions.showToast
 import com.example.geniotecni.tigo.managers.StatisticsManager
-import com.example.geniotecni.tigo.utils.showToast
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
@@ -20,10 +20,19 @@ import com.github.mikephil.charting.formatter.PercentFormatter
 import com.github.mikephil.charting.utils.ColorTemplate
 import java.text.DecimalFormat
 import java.util.*
+import dagger.hilt.android.AndroidEntryPoint
+import androidx.activity.viewModels
+import com.example.geniotecni.tigo.ui.viewmodels.StatisticsViewModel
 
-class StatisticsActivity : AppCompatActivity() {
+@AndroidEntryPoint
+class StatisticsActivity : BaseActivity() {
+    
+    override val tag = "StatisticsActivity"
 
     private lateinit var statisticsManager: StatisticsManager
+    
+    // ViewModel with dependency injection
+    private val viewModel: StatisticsViewModel by viewModels()
 
     // Time filter buttons
     private lateinit var todayButton: Button

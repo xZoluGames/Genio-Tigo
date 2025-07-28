@@ -1,22 +1,33 @@
 package com.example.geniotecni.tigo.ui.activities
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.*
+import androidx.activity.viewModels
+import androidx.preference.ListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreferenceCompat
 import com.example.geniotecni.tigo.R
 import com.example.geniotecni.tigo.helpers.BackupHelper
 import com.example.geniotecni.tigo.helpers.ExportHelper
 import com.example.geniotecni.tigo.managers.PreferencesManager
 import com.example.geniotecni.tigo.managers.PrintDataManager
+import com.example.geniotecni.tigo.ui.viewmodels.SettingsViewModel
+import com.example.geniotecni.tigo.utils.BaseActivity
 import com.example.geniotecni.tigo.utils.showToast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-class SettingsActivity : AppCompatActivity() {
+@AndroidEntryPoint
+class SettingsActivity : BaseActivity() {
+    
+    override val tag = "SettingsActivity"
+    
+    // ViewModel with dependency injection
+    private val viewModel: SettingsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,6 +115,15 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
             }
+            
+            // Print size
+            findPreference<ListPreference>("print_size")?.apply {
+                value = preferencesManager.printSize
+                setOnPreferenceChangeListener { _, newValue ->
+                    preferencesManager.printSize = newValue as String
+                    true
+                }
+            }
 
             // Export data
             findPreference<Preference>("export_data")?.setOnPreferenceClickListener {
@@ -174,7 +194,12 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun showExportDialog() {
             val options = arrayOf("CSV", "PDF", "Ambos")
-            val selected = preferencesManager.exportFormat
+            val selected = when (preferencesManager.exportFormat) {
+                "csv" -> 0
+                "pdf" -> 1
+                "both" -> 2
+                else -> 0
+            }
 
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Exportar historial")
@@ -182,16 +207,16 @@ class SettingsActivity : AppCompatActivity() {
                     when (which) {
                         0 -> {
                             exportHelper.exportToCSV(true)
-                            preferencesManager.exportFormat = 0
+                            preferencesManager.exportFormat = "csv"
                         }
                         1 -> {
                             exportHelper.exportToPDF(true)
-                            preferencesManager.exportFormat = 1
+                            preferencesManager.exportFormat = "pdf"
                         }
                         2 -> {
                             exportHelper.exportToCSV(false)
                             exportHelper.exportToPDF(true)
-                            preferencesManager.exportFormat = 2
+                            preferencesManager.exportFormat = "both"
                         }
                     }
                     dialog.dismiss()

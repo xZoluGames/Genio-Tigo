@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/sort_name_asc"
+        android:title="Nombre (A-Z)"
+        android:icon="@drawable/ic_sort_alphabetical" />
+    
+    <item
+        android:id="@+id/sort_name_desc"
+        android:title="Nombre (Z-A)"
+        android:icon="@drawable/ic_sort_alphabetical_desc" />
+    
+    <item
+        android:id="@+id/sort_category"
+        android:title="Por categoría"
+        android:icon="@drawable/ic_category" />
+    
+    <item
+        android:id="@+id/sort_most_used"
+        android:title="Más utilizados"
+        android:icon="@drawable/ic_trending_up" />
+</menu>

@@ -1,6 +1,7 @@
 package com.example.geniotecni.tigo.helpers
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.view.animation.Animation
@@ -10,8 +11,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.geniotecni.tigo.R
 import kotlinx.coroutines.*
 
-class LoadingAnimationHelper(private val activity: AppCompatActivity) {
-    
+class LoadingAnimationHelper(private val activity: AppCompatActivity, private val context: Context) {
+
     private var loadingView: View? = null
     private var progressBar: ProgressBar? = null
     private var fadeInAnimation: Animation? = null

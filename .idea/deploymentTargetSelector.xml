@@ -4,14 +4,17 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-07-19T00:49:56.213333500Z">
+        <DropdownSelection timestamp="2025-07-24T14:45:08.183484700Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Zolu\.android\avd\A12_API_33.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Zolu\.android\avd\A12_API_33_2.avd" />
             </handle>
           </Target>
         </DropdownSelection>
         <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="No usar.android-sound-recorder-master.app">
+        <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
   </component>

@@ -106,6 +106,19 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Impresión">
+
+        <ListPreference
+            android:key="print_size"
+            android:title="Tamaño de impresión"
+            android:summary="Selecciona el tamaño de letra para imprimir"
+            android:entries="@array/print_size_entries"
+            android:entryValues="@array/print_size_values"
+            android:defaultValue="medium"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="Dispositivos">
 
         <Preference

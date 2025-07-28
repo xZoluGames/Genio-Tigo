@@ -58,6 +58,19 @@
         <item>excel</item>
         <item>csv</item>
     </string-array>
+    
+    <!-- Print size options -->
+    <string-array name="print_size_entries">
+        <item>Pequeño</item>
+        <item>Mediano</item>
+        <item>Grande</item>
+    </string-array>
+    
+    <string-array name="print_size_values">
+        <item>small</item>
+        <item>medium</item>
+        <item>large</item>
+    </string-array>
 
 
 </resources>

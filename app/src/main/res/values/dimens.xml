@@ -19,6 +19,9 @@
     <!-- Service header dimensions -->
     <dimen name="service_icon_size">80dp</dimen>
     <dimen name="service_icon_padding">8dp</dimen>
+    
+    <!-- Service list item dimensions -->
+    <dimen name="service_icon_image_size">40dp</dimen>
 
     <!-- Input field spacing -->
     <dimen name="input_field_margin">16dp</dimen>

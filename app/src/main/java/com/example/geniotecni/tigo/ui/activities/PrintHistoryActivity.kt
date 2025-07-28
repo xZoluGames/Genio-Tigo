@@ -1,15 +1,18 @@
 package com.example.geniotecni.tigo.ui.activities
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.TextView
-import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -18,18 +21,29 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.geniotecni.tigo.R
 import com.example.geniotecni.tigo.helpers.ExportHelper
+import com.example.geniotecni.tigo.managers.PreferencesManager
 import com.example.geniotecni.tigo.managers.PrintDataManager
 import com.example.geniotecni.tigo.models.PrintData
 import com.example.geniotecni.tigo.models.ReferenceData
-import com.example.geniotecni.tigo.ui.adapters.PrintHistoryAdapter
+import com.example.geniotecni.tigo.ui.adapters.OptimizedPrintHistoryAdapter
+import com.example.geniotecni.tigo.ui.viewmodels.PrintHistoryViewModel
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.*
+import com.google.android.material.textfield.TextInputEditText
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.util.UUID
 
+@AndroidEntryPoint
 class PrintHistoryActivity : AppCompatActivity() {
 
     private lateinit var toolbar: MaterialToolbar
@@ -37,13 +51,23 @@ class PrintHistoryActivity : AppCompatActivity() {
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var emptyView: View
     private lateinit var emptyTextView: TextView
-    private lateinit var adapter: PrintHistoryAdapter
+    private lateinit var adapter: OptimizedPrintHistoryAdapter
     private lateinit var printDataManager: PrintDataManager
     private lateinit var exportHelper: ExportHelper
+    private lateinit var preferencesManager: PreferencesManager
+    
+    // ViewModel with dependency injection
+    private val viewModel: PrintHistoryViewModel by viewModels()
+    
     private lateinit var fabFilter: FloatingActionButton
+    private lateinit var searchCard: MaterialCardView
+    private lateinit var searchEditText: TextInputEditText
+    private lateinit var clearSearchButton: MaterialButton
 
     private var printHistory = listOf<PrintData>()
+    private var filteredHistory = listOf<PrintData>()
     private var currentFilter = FilterType.ALL
+    private var currentSearchQuery = ""
 
     enum class FilterType {
         ALL, TODAY, WEEK, MONTH
@@ -59,6 +83,7 @@ class PrintHistoryActivity : AppCompatActivity() {
         setupRecyclerView()
         setupSwipeRefresh()
         setupFAB()
+        setupSearch()
         loadPrintHistory()
     }
 
@@ -77,9 +102,13 @@ class PrintHistoryActivity : AppCompatActivity() {
         emptyView = findViewById(R.id.emptyView)
         emptyTextView = findViewById(R.id.emptyTextView)
         fabFilter = findViewById(R.id.fabFilter)
+        searchCard = findViewById(R.id.searchCard)
+        searchEditText = findViewById(R.id.searchEditText)
+        clearSearchButton = findViewById(R.id.clearSearchButton)
 
         printDataManager = PrintDataManager(this)
         exportHelper = ExportHelper(this)
+        preferencesManager = PreferencesManager(this)
     }
 
     private fun setupToolbar() {
@@ -107,7 +136,7 @@ class PrintHistoryActivity : AppCompatActivity() {
             }
         })
 
-        adapter = PrintHistoryAdapter(
+        adapter = OptimizedPrintHistoryAdapter(
             printHistory = emptyList(),
             onReprintClick = { printData ->
                 showReprintConfirmationDialog(printData)
@@ -137,8 +166,154 @@ class PrintHistoryActivity : AppCompatActivity() {
 
     private fun setupFAB() {
         fabFilter.setOnClickListener {
-            showFilterDialog()
+            toggleSearchBar()
         }
+    }
+    
+    private fun setupSearch() {
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                currentSearchQuery = s?.toString() ?: ""
+                performSearch()
+            }
+        })
+        
+        searchEditText.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || 
+                (event != null && event.keyCode == KeyEvent.KEYCODE_ENTER)) {
+                performSearch()
+                true
+            } else {
+                false
+            }
+        }
+        
+        clearSearchButton.setOnClickListener {
+            searchEditText.text?.clear()
+            currentSearchQuery = ""
+            performSearch()
+        }
+    }
+    
+    private fun toggleSearchBar() {
+        if (searchCard.visibility == View.VISIBLE) {
+            searchCard.visibility = View.GONE
+            fabFilter.setImageResource(R.drawable.ic_search)
+            searchEditText.text?.clear()
+            currentSearchQuery = ""
+            performSearch()
+        } else {
+            searchCard.visibility = View.VISIBLE
+            fabFilter.setImageResource(R.drawable.ic_search_off)
+            searchEditText.requestFocus()
+        }
+    }
+    
+    private fun performSearch() {
+        if (currentSearchQuery.isEmpty()) {
+            filteredHistory = filterHistory(printHistory)
+        } else {
+            val searchLower = currentSearchQuery.lowercase()
+            filteredHistory = filterHistory(printHistory).filter { printData ->
+                searchInPrintData(printData, searchLower)
+            }
+        }
+        
+        adapter.updateData(filteredHistory)
+        updateEmptyView()
+    }
+    
+    private fun searchInPrintData(printData: PrintData, query: String): Boolean {
+        // Search in basic fields
+        if (printData.service.lowercase().contains(query) ||
+            printData.date.contains(query) ||
+            printData.time.contains(query) ||
+            printData.message.lowercase().contains(query)) {
+            return true
+        }
+        
+        // Search in reference data
+        if (printData.referenceData.ref1.lowercase().contains(query) ||
+            printData.referenceData.ref2.lowercase().contains(query)) {
+            return true
+        }
+        
+        // Search in structured transaction data (preferred method)
+        val transactionData = printData.transactionData
+        if (transactionData.phone.lowercase().contains(query) ||
+            transactionData.cedula.lowercase().contains(query) ||
+            transactionData.amount.contains(query) ||
+            transactionData.date.contains(query)) {
+            return true
+        }
+        
+        // Fallback: Search in extracted data for legacy records
+        if (transactionData.phone.isEmpty() || transactionData.cedula.isEmpty() || transactionData.amount.isEmpty()) {
+            val phone = extractPhone(printData.message)
+            val cedula = extractCedula(printData.message)
+            val amount = extractAmount(printData.message)
+            val reference = extractLegacyReference(printData.message)
+            
+            if (phone?.lowercase()?.contains(query) == true ||
+                cedula?.lowercase()?.contains(query) == true ||
+                amount.toString().contains(query) ||
+                reference?.lowercase()?.contains(query) == true) {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    // Helper functions for search (extracted from adapter)
+    private fun extractPhone(message: String): String? {
+        val patterns = listOf(
+            Regex("""Tel[eé]fono:\s*([0-9\-\s]+)"""),
+            Regex("""Tel:\s*([0-9\-\s]+)"""),
+            Regex("""Teléfono:\s*([0-9\-\s]+)"""),
+            Regex("""Número:\s*([0-9\-\s]+)"""),
+            Regex("""([0-9]{3,4}[\-\s]?[0-9]{6,7})""") // General phone pattern
+        )
+        
+        for (pattern in patterns) {
+            val match = pattern.find(message)
+            if (match != null) {
+                return match.groupValues[1].trim()
+            }
+        }
+        return null
+    }
+    
+    private fun extractCedula(message: String): String? {
+        val patterns = listOf(
+            Regex("""Cédula:\s*([0-9\.\-\s]+)"""),
+            Regex("""C\.I\.:?\s*([0-9\.\-\s]+)"""),
+            Regex("""CI:\s*([0-9\.\-\s]+)"""),
+            Regex("""([0-9]{1,2}\.[0-9]{3}\.[0-9]{3})"""), // CI format x.xxx.xxx
+            Regex("""([0-9]{7,8})""") // Simple number format
+        )
+        
+        for (pattern in patterns) {
+            val match = pattern.find(message)
+            if (match != null) {
+                return match.groupValues[1].trim()
+            }
+        }
+        return null
+    }
+    
+    private fun extractLegacyReference(message: String): String? {
+        val regex = Regex("""Ref:\s*(\w+)""")
+        val match = regex.find(message)
+        return match?.groupValues?.get(1)
+    }
+    
+    private fun extractAmount(message: String): Long {
+        val regex = Regex("""Monto:\s*([0-9,]+)\s*Gs\.?""")
+        val match = regex.find(message)
+        return match?.groupValues?.get(1)?.replace(",", "")?.toLongOrNull() ?: 0L
     }
 
     private fun loadPrintHistory() {
@@ -154,9 +329,8 @@ class PrintHistoryActivity : AppCompatActivity() {
 
                 withContext(Dispatchers.Main) {
                     printHistory = filteredHistory
-                    adapter.updateData(printHistory)
+                    performSearch() // Apply current search and filter
 
-                    updateEmptyView()
                     swipeRefreshLayout.isRefreshing = false
 
                     if (filteredHistory.isEmpty() && currentFilter != FilterType.ALL) {
@@ -184,15 +358,17 @@ class PrintHistoryActivity : AppCompatActivity() {
                 }
             }
             FilterType.WEEK -> {
-                calendar.add(java.util.Calendar.DAY_OF_YEAR, -7)
-                val weekAgo = calendar.time
+                val weekCalendar = java.util.Calendar.getInstance()
+                weekCalendar.add(java.util.Calendar.DAY_OF_YEAR, -7)
+                val weekAgo = weekCalendar.time
                 history.filter { data ->
                     isAfterDate(data.date, weekAgo)
                 }
             }
             FilterType.MONTH -> {
-                calendar.add(java.util.Calendar.MONTH, -1)
-                val monthAgo = calendar.time
+                val monthCalendar = java.util.Calendar.getInstance()
+                monthCalendar.add(java.util.Calendar.MONTH, -1)
+                val monthAgo = monthCalendar.time
                 history.filter { data ->
                     isAfterDate(data.date, monthAgo)
                 }
@@ -204,7 +380,7 @@ class PrintHistoryActivity : AppCompatActivity() {
         return try {
             val formatter = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault())
             val dataDate = formatter.parse(dateString)
-            formatter.format(dataDate) == formatter.format(date)
+            dataDate?.let { formatter.format(it) } == formatter.format(date)
         } catch (e: Exception) {
             false
         }
@@ -221,15 +397,17 @@ class PrintHistoryActivity : AppCompatActivity() {
     }
 
     private fun updateEmptyView() {
-        if (printHistory.isEmpty()) {
+        if (filteredHistory.isEmpty()) {
             recyclerView.visibility = View.GONE
             emptyView.visibility = View.VISIBLE
 
-            emptyTextView.text = when (currentFilter) {
-                FilterType.ALL -> "No hay transacciones registradas"
-                FilterType.TODAY -> "No hay transacciones de hoy"
-                FilterType.WEEK -> "No hay transacciones de esta semana"
-                FilterType.MONTH -> "No hay transacciones de este mes"
+            emptyTextView.text = when {
+                currentSearchQuery.isNotEmpty() -> "No se encontraron resultados para '\$currentSearchQuery'"
+                currentFilter == FilterType.ALL -> "No hay transacciones registradas"
+                currentFilter == FilterType.TODAY -> "No hay transacciones de hoy"
+                currentFilter == FilterType.WEEK -> "No hay transacciones de esta semana"
+                currentFilter == FilterType.MONTH -> "No hay transacciones de este mes"
+                else -> "No hay transacciones registradas"
             }
         } else {
             recyclerView.visibility = View.VISIBLE
@@ -245,7 +423,7 @@ class PrintHistoryActivity : AppCompatActivity() {
             .setTitle("Filtrar por período")
             .setSingleChoiceItems(options, currentIndex) { dialog, which ->
                 currentFilter = FilterType.values()[which]
-                loadPrintHistory()
+                performSearch() // Apply new filter with current search
                 dialog.dismiss()
             }
             .setNegativeButton("Cancelar", null)
@@ -261,6 +439,10 @@ class PrintHistoryActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_export -> {
                 showExportDialog()
+                true
+            }
+            R.id.action_filter -> {
+                showFilterDialog()
                 true
             }
             R.id.action_clear -> {
@@ -303,7 +485,8 @@ class PrintHistoryActivity : AppCompatActivity() {
     private fun clearHistory() {
         printDataManager.clearAllData()
         printHistory = emptyList()
-        adapter.updateData(printHistory)
+        filteredHistory = emptyList()
+        adapter.updateData(filteredHistory)
         updateEmptyView()
         showSnackbar("Historial borrado")
     }
@@ -321,8 +504,7 @@ class PrintHistoryActivity : AppCompatActivity() {
         // Note: This requires modifying PrintDataManager to support updating the entire list
         // For now, we'll just update the UI
         printHistory = newList
-        adapter.updateData(printHistory)
-        updateEmptyView()
+        performSearch() // Refresh filtered results
         showSnackbar("Transacción eliminada")
     }
 
@@ -361,15 +543,43 @@ class PrintHistoryActivity : AppCompatActivity() {
 
                     val outputStream = socket.outputStream
 
-                    // Print commands
+                    // Print commands based on size preference
+                    val printSize = preferencesManager.printSize
                     val alignCenterCommand = byteArrayOf(0x1B, 0x61, 0x01)
-                    val largeFontCommand = byteArrayOf(0x1D, 0x21, 0x11)
-                    val normalFontCommand = byteArrayOf(0x1B, 0x21, 0x00)
+                    val alignLeftCommand = byteArrayOf(0x1B, 0x61, 0x00)
+                    
+                    val (headerFontCommand, bodyFontCommand) = when (printSize) {
+                        "small" -> {
+                            // Small: Header normal, body small
+                            Pair(
+                                byteArrayOf(0x1B, 0x21, 0x00), // Normal font for header
+                                byteArrayOf(0x1B, 0x21, 0x08)  // Small font for body
+                            )
+                        }
+                        "large" -> {
+                            // Large: Header large, body normal
+                            Pair(
+                                byteArrayOf(0x1D, 0x21, 0x11), // Large font for header
+                                byteArrayOf(0x1B, 0x21, 0x10)  // Medium font for body
+                            )
+                        }
+                        else -> { // "medium" (default)
+                            // Medium: Header medium, body normal
+                            Pair(
+                                byteArrayOf(0x1D, 0x21, 0x11), // Large font for header
+                                byteArrayOf(0x1B, 0x21, 0x00)  // Normal font for body
+                            )
+                        }
+                    }
 
+                    // Print header
                     outputStream.write(alignCenterCommand)
-                    outputStream.write(largeFontCommand)
+                    outputStream.write(headerFontCommand)
                     outputStream.write("GENIO TECNI\n".toByteArray())
-                    outputStream.write(normalFontCommand)
+                    
+                    // Print body
+                    outputStream.write(alignLeftCommand)
+                    outputStream.write(bodyFontCommand)
                     outputStream.write("\n".toByteArray())
                     outputStream.write(data.toByteArray())
                     outputStream.write("\n\n\n".toByteArray())

@@ -1,31 +1,17 @@
 package com.example.geniotecni.tigo.ui.activities
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Dialog
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.ContentObserver
-import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.provider.Telephony
 import android.telecom.TelecomManager
 import android.text.Editable
-import android.text.InputType
 import android.text.TextWatcher
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -39,16 +25,18 @@ import com.example.geniotecni.tigo.helpers.USSDIntegrationHelper
 import com.example.geniotecni.tigo.models.PrintData
 import com.example.geniotecni.tigo.models.ReferenceData
 import com.example.geniotecni.tigo.models.ServiceConfig
+import com.example.geniotecni.tigo.models.TransactionData
 import com.example.geniotecni.tigo.ui.adapters.ServiceItem
 import com.example.geniotecni.tigo.utils.Constants
 import com.example.geniotecni.tigo.utils.AppLogger
+import com.example.geniotecni.tigo.utils.OptimizedServiceConfiguration
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.*
-import java.io.IOException
+import androidx.lifecycle.lifecycleScope
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -56,6 +44,39 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import dagger.hilt.android.AndroidEntryPoint
+import androidx.activity.viewModels
+import com.example.geniotecni.tigo.ui.viewmodels.MainViewModel
+
+/**
+ * 🎯 ACTIVIDAD PRINCIPAL - Orquestador Central del Sistema Genio-Tigo
+ * 
+ * PROPÓSITO:
+ * - Gestiona la interfaz principal para servicios financieros y telecomunicaciones
+ * - Coordina entre múltiples managers para funcionalidad completa
+ * - Maneja validación de inputs y flujos de transacciones USSD/SMS
+ * 
+ * DEPENDENCIAS CRÍTICAS:
+ * - PreferencesManager: Configuraciones de usuario y persistencia
+ * - ServiceRepository: Acceso centralizado a configuraciones de servicios
+ * - USSDIntegrationHelper: Integración completa con códigos USSD y SMS
+ * - PrintDataManager: Persistencia del historial de transacciones
+ * - EditModeManager: Personalización en tiempo real de la interfaz
+ * - BluetoothManager: Conectividad con impresoras térmicas
+ * 
+ * FLUJO PRINCIPAL DE TRANSACCIONES:
+ * 1. Usuario selecciona servicio → updateServiceConfiguration()
+ * 2. Usuario completa datos → validateInputs()
+ * 3. Usuario ejecuta → processUSSDForService() o processManualService()
+ * 4. Sistema procesa → USSDIntegrationHelper maneja USSD/SMS automáticamente
+ * 5. Resultado → savePrintData() y printData() para persistencia e impresión
+ * 
+ * CONEXIONES ARQUITECTÓNICAS:
+ * - CONSUME: OptimizedServiceConfiguration para configuraciones dinámicas
+ * - GESTIONA: Ciclo de vida de todos los managers especializados
+ * - IMPLEMENTA: USSDCallback para respuestas asíncronas de transacciones
+ */
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
 
     companion object {
@@ -74,12 +95,15 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
     private lateinit var printCooldownManager: PrintCooldownManager
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var editModeManager: EditModeManager
-    private lateinit var bluetoothManager: com.example.geniotecni.tigo.managers.BluetoothManager
-    private lateinit var ussdIntegrationHelper: com.example.geniotecni.tigo.helpers.USSDIntegrationHelper
+    private lateinit var bluetoothManager: BluetoothManager
+    private lateinit var ussdIntegrationHelper: USSDIntegrationHelper
     private lateinit var amountUsageManager: AmountUsageManager
+    
+    // ViewModel with dependency injection
+    private val viewModel: MainViewModel by viewModels()
+    
     private lateinit var executeUSSDButton: MaterialButton
     private lateinit var manualReferenceButton: MaterialButton
-    private lateinit var viewMoreButton: MaterialButton
     private lateinit var quickAmountChipGroup: ChipGroup
 
     // Layout components
@@ -105,114 +129,11 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
     private var currentServiceType = 0
     private lateinit var currentService: ServiceItem
 
-    // Service configurations map - matches Constants.SERVICE_NAMES
-    private val serviceConfigs = mapOf(
-        // Giros Tigo (0)
-        0 to ServiceConfig(
-            showPhone = true,
-            showCedula = true,
-            showAmount = true,
-            phoneHint = "Número de teléfono",
-            cedulaHint = "Número de cédula",
-            amountHint = "Monto a enviar"
-        ),
-        // Retiros Tigo (1)
-        1 to ServiceConfig(
-            showPhone = true,
-            showCedula = true,
-            showAmount = true,
-            phoneHint = "Número de teléfono",
-            cedulaHint = "Número de cédula",
-            amountHint = "Monto a retirar"
-        ),
-        // Carga Billetera Tigo (2)
-        2 to ServiceConfig(
-            showPhone = true,
-            showCedula = true,
-            showAmount = true,
-            phoneHint = "Número de teléfono",
-            cedulaHint = "Número de cédula",
-            amountHint = "Monto a cargar"
-        ),
-        // Telefonia Tigo (3)
-        3 to ServiceConfig(
-            showPhone = true,
-            showCedula = false,
-            showAmount = false,
-            phoneHint = "Número de teléfono"
-        ),
-        // Pago TV e Internet Hogar (4)
-        4 to ServiceConfig(
-            showPhone = false,
-            showCedula = true,
-            showAmount = false,
-            cedulaHint = "Número de cuenta"
-        ),
-        // Antena (Wimax) (5)
-        5 to ServiceConfig(
-            showPhone = false,
-            showCedula = true,
-            showAmount = false,
-            cedulaHint = "Número de cuenta"
-        ),
-        // Tigo TV anticipado (6)
-        6 to ServiceConfig(
-            showPhone = false,
-            showCedula = true,
-            showAmount = false,
-            cedulaHint = "Número de cliente"
-        ),
-        // Reseteo de Cliente (7)
-        7 to ServiceConfig(
-            showPhone = true,
-            showCedula = true,
-            showAmount = false,
-            showNacimiento = true,
-            phoneHint = "Número de teléfono",
-            cedulaHint = "Número de cédula",
-            nacimientoHint = "Fecha de nacimiento"
-        ),
-        // ANDE (8)
-        8 to ServiceConfig(
-            showPhone = false,
-            showCedula = true,
-            showAmount = false,
-            cedulaHint = "Número de NIS"
-        ),
-        // ESSAP (9)
-        9 to ServiceConfig(
-            showPhone = false,
-            showCedula = true,
-            showAmount = false,
-            cedulaHint = "Número de ISSAN"
-        ),
-        // COPACO (10)
-        10 to ServiceConfig(
-            showPhone = false,
-            showCedula = true,
-            showAmount = false,
-            cedulaHint = "Teléfono o Cuenta"
-        ),
-        // Retiros Personal (11)
-        11 to ServiceConfig(
-            showPhone = true,
-            showCedula = true,
-            showAmount = true,
-            phoneHint = "Número de teléfono",
-            cedulaHint = "Número de cédula",
-            amountHint = "Monto a retirar"
-        ),
-        // Telefonia Personal (12)
-        12 to ServiceConfig(
-            showPhone = true,
-            showCedula = false,
-            showAmount = true,
-            phoneHint = "Número de teléfono",
-            amountHint = "Monto a pagar"
-        )
+    // Service configurations now managed centrally by ServiceConfigurationManager
+    // No more duplicated configuration code needed!
+
         // Se pueden agregar más configuraciones según sea necesario
         // Para servicios no configurados, se usará la configuración por defecto
-    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -229,7 +150,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
             preferencesManager = PreferencesManager(this)
             printDataManager = PrintDataManager(this)
             printCooldownManager = PrintCooldownManager(this)
-            bluetoothManager = com.example.geniotecni.tigo.managers.BluetoothManager(this)
+            bluetoothManager = BluetoothManager(this)
             ussdIntegrationHelper = USSDIntegrationHelper(this)
             editModeManager = EditModeManager(this, this, coordinatorLayout, preferencesManager)
             amountUsageManager = AmountUsageManager(this)
@@ -329,7 +250,6 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         dateInput = findViewById(R.id.dateInput)
         executeUSSDButton = findViewById(R.id.executeUSSDButton)
         manualReferenceButton = findViewById(R.id.manualReferenceButton)
-        viewMoreButton = findViewById(R.id.viewMoreButton)
         quickAmountChipGroup = findViewById(R.id.quickAmountChipGroup)
         // Amount controls (removed - no longer needed)
 
@@ -349,26 +269,29 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         quickAmountChipGroup.removeAllViews()
         
         // Obtener los montos más utilizados (ordenados por frecuencia de uso histórico)
-        val topAmounts = amountUsageManager.getTopUsedAmounts()
+        lifecycleScope.launch {
+            val topAmounts = amountUsageManager.getTopUsedAmounts()
         
         AppLogger.d(TAG, "Configurando chips con montos más utilizados: $topAmounts")
         
         // Solo mostrar chips si hay al menos 1 monto registrado
         if (topAmounts.isNotEmpty()) {
             topAmounts.forEach { amount ->
-                val chip = Chip(this).apply {
-                    text = amount
+                val chip = Chip(this@MainActivity).apply {
+                    text = amount.amount.toString()
                     isClickable = true
                     setOnClickListener {
                         // Remover formato para insertar en el campo
-                        val cleanAmount = amount.replace(",", "")
+                        val cleanAmount = amount.amount.toString()
                         amountInput.setText(cleanAmount)
                         amountInput.setSelection(amountInput.text?.length ?: 0)
                         
                         // Registrar uso del monto
-                        amountUsageManager.recordAmountUsage(cleanAmount)
+                        lifecycleScope.launch {
+                            amountUsageManager.recordAmountUsage(amount.amount)
+                        }
                         
-                        AppLogger.logUserAction(TAG, "Chip de monto seleccionado", amount)
+                        AppLogger.logUserAction(TAG, "Chip de monto seleccionado", amount.amount.toString())
                     }
                 }
                 quickAmountChipGroup.addView(chip)
@@ -380,6 +303,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
             // No mostrar chips hasta que haya al menos 1 monto registrado
             quickAmountChipGroup.visibility = View.GONE
             AppLogger.d(TAG, "No hay montos registrados - ocultando chips")
+        }
         }
     }
     
@@ -404,14 +328,13 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         // Botón Referencia Manual
         manualReferenceButton.setOnClickListener {
             AppLogger.logButtonClick(TAG, "ManualReference", "Ingreso manual de referencia")
+            if (!validateInputs()) {
+                showSnackbar("Por favor complete todos los campos requeridos")
+                return@setOnClickListener
+            }
             showManualReferenceDialog()
         }
 
-        // Botón Ver más (para reseteo de cliente)
-        viewMoreButton.setOnClickListener {
-            AppLogger.logButtonClick(TAG, "ViewMore", "Ver más información de reseteo")
-            showResetClientMoreInfo()
-        }
     }
 
     private fun validateInputs(): Boolean {
@@ -486,7 +409,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
                 val ref1 = ref1Input.text.toString()
                 val ref2 = ref2Input.text.toString()
 
-                if (ref1.isNotEmpty() && ref2.isNotEmpty()) {
+                if (ref1.isNotEmpty()) {
                     val referenceData = ReferenceData(ref1, ref2)
                     processManualReference(referenceData)
                 } else {
@@ -534,7 +457,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
 
         return buildString {
             appendLine("================================")
-            appendLine("       GENIO TECNI S.A.")
+            appendLine("       GENIO TECNI")
             appendLine("================================")
             appendLine("SERVICIO: $service")
             appendLine("FECHA: ${dateFormatter.format(currentDate)}")
@@ -593,38 +516,29 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
     }
 
     private fun savePrintData(service: String, message: String, referenceData: ReferenceData?) {
+        // Capturar datos directamente de los campos de entrada
+        val transactionData = TransactionData(
+            phone = phoneInput.text.toString().trim(),
+            cedula = cedulaInput.text.toString().trim(),
+            amount = amountInput.text.toString().replace(",", "").trim(),
+            date = dateInput.text.toString().trim(),
+            additionalData = emptyMap() // Para datos específicos del servicio si los hay
+        )
+        
         val printData = PrintData(
             service = service,
             date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
             time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()),
             message = message,
-            referenceData = referenceData ?: ReferenceData("N/A", "N/A")
+            referenceData = referenceData ?: ReferenceData("N/A", "N/A"),
+            transactionData = transactionData
         )
 
         printDataManager.savePrintData(printData)
-        AppLogger.i(TAG, "Datos guardados en historial: $service")
+        AppLogger.i(TAG, "Datos guardados en historial: $service con datos estructurados")
     }
 
-    private fun initializeManagers() {
-        AppLogger.i(TAG, "Inicializando managers")
-        val startTime = System.currentTimeMillis()
-        
-        preferencesManager = PreferencesManager(this)
-        AppLogger.d(TAG, "PreferencesManager inicializado")
-        printDataManager = PrintDataManager(this)
-        AppLogger.d(TAG, "PrintDataManager inicializado")
-        printCooldownManager = PrintCooldownManager(this)
-        AppLogger.d(TAG, "PrintCooldownManager inicializado")
-        editModeManager = EditModeManager(this, this, coordinatorLayout, preferencesManager)
-        AppLogger.d(TAG, "EditModeManager inicializado")
 
-        // Initialize edit mode manager
-        editModeManager.initializeEditMode()
-        AppLogger.d(TAG, "EditMode inicializado")
-        
-        val initTime = System.currentTimeMillis() - startTime
-        AppLogger.i(TAG, "Managers inicializados en ${initTime}ms")
-    }
 
     private fun setupListeners() {
         // Button listeners removed - buttons no longer exist in layout
@@ -739,40 +653,20 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
     private fun updateServiceConfiguration(serviceType: Int) {
         currentServiceType = serviceType
         
-        // Get configuration or use default
-        val config = serviceConfigs[serviceType] ?: ServiceConfig(
-            showPhone = true,
-            showCedula = true,
-            showAmount = false,
-            phoneHint = "Número de teléfono",
-            cedulaHint = "Número de cédula"
-        )
+        // Get configuration from centralized manager
+        val serviceConfiguration = OptimizedServiceConfiguration.getServiceConfiguration(serviceType)
+        val config = serviceConfiguration?.config ?: ServiceConfig()
 
-        // Update service title and image based on current service item if available
+        // Update service title and image using centralized configuration
         if (::currentService.isInitialized) {
             serviceImage.setImageResource(currentService.icon)
             serviceTitle.text = currentService.name
             toolbar.title = currentService.name
         } else {
-            // Fallback to service names from Constants
-            val serviceName = if (serviceType < Constants.SERVICE_NAMES.size) {
-                Constants.SERVICE_NAMES[serviceType]
-            } else {
-                "Servicio"
-            }
-            
-            serviceTitle.text = serviceName
-            toolbar.title = serviceName
-            
-            // Set default image based on service type
-            serviceImage.setImageResource(when {
-                serviceName.contains("Tigo", ignoreCase = true) -> R.drawable.tigo_cuadrado
-                serviceName.contains("ANDE", ignoreCase = true) -> R.drawable.ande_icon
-                serviceName.contains("ESSAP", ignoreCase = true) -> R.drawable.essap_icon
-                serviceName.contains("COPACO", ignoreCase = true) -> R.drawable.cocapo_icon
-                serviceName.contains("Personal", ignoreCase = true) -> R.drawable.personal_logo
-                else -> R.drawable.ic_service_default
-            })
+            // Use centralized service configuration
+            serviceTitle.text = serviceConfiguration?.name ?: "Servicio $serviceType"
+            toolbar.title = serviceConfiguration?.name ?: "Servicio $serviceType"
+            serviceImage.setImageResource(serviceConfiguration?.icon ?: R.drawable.ic_service_default)
         }
 
         // Update visibility of input fields
@@ -786,8 +680,6 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         // Handle date input for birth date
         dateInputLayout.visibility = if (config.showNacimiento) View.VISIBLE else View.GONE
 
-        // Show "Ver más" button only for Reset Client service (ID 7)
-        viewMoreButton.visibility = if (serviceType == 7) View.VISIBLE else View.GONE
 
         // Update hints
         phoneInputLayout.hint = config.phoneHint
@@ -795,8 +687,10 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         amountInputLayout.hint = config.amountHint
         dateInputLayout.hint = config.nacimientoHint
 
-        // Update edit mode manager with current service
+        // Update edit mode manager with current service and load its configuration
         editModeManager.setCurrentServiceType(serviceType)
+        // Initialize edit mode after service configuration is set
+        editModeManager.initializeEditMode()
 
         // Clear inputs when switching services
         clearAllInputs()
@@ -822,88 +716,17 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
     }
     
     private fun initializePhoneInput(serviceType: Int) {
-        val config = serviceConfigs[serviceType]
+        val config = OptimizedServiceConfiguration.getServiceConfig(serviceType)
         
         // Auto-load "09" for services that require phone input
-        if (config?.showPhone == true) {
+        if (config.showPhone) {
             phoneInput.setText("09")
             phoneInput.setSelection(phoneInput.text?.length ?: 0) // Set cursor at end
             AppLogger.d(TAG, "Auto-cargado '09' para servicio tipo $serviceType")
         }
     }
 
-    // adjustAmount method removed - no longer needed
 
-    private fun processTransaction() {
-        AppLogger.i(TAG, "Iniciando procesamiento de transacción")
-        if (!validateInputs()) {
-            AppLogger.w(TAG, "Transacción cancelada - Validación fallida")
-            return
-        }
-
-        // Check print cooldown
-        val printStatus = printCooldownManager.canPrint()
-        AppLogger.d(TAG, "Estado cooldown impresión: ${printStatus.canPrint}")
-        if (!printStatus.canPrint) {
-            AppLogger.w(TAG, "Transacción bloqueada por cooldown: ${printStatus.message}")
-            showSnackbar(printStatus.message)
-            return
-        }
-
-        // Check Bluetooth device
-        if (!checkBluetoothDevice()) {
-            AppLogger.w(TAG, "Transacción cancelada - Sin dispositivo Bluetooth")
-            return
-        }
-
-        // Show processing dialog
-        AppLogger.i(TAG, "Mostrando diálogo de procesamiento")
-        showProcessingDialog()
-
-        // Process the transaction
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                AppLogger.i(TAG, "Simulando procesamiento de transacción...")
-                val startTime = System.currentTimeMillis()
-                delay(1500) // Simulate processing
-
-                val printData = createPrintData()
-                AppLogger.logDataProcessing(TAG, "Crear datos de impresión", "PrintData", 1, System.currentTimeMillis() - startTime)
-                printDataManager.savePrintData(printData)
-                
-                // Registrar uso del monto si aplica
-                val amountText = amountInput.text.toString().replace(",", "")
-                if (amountText.isNotEmpty() && amountText.toLongOrNull() != null) {
-                    amountUsageManager.recordAmountUsage(amountText)
-                    AppLogger.d(TAG, "Uso de monto registrado: $amountText")
-                }
-                AppLogger.logFileOperation(TAG, "Guardar", "PrintData", true)
-                printCooldownManager.recordPrint()
-                AppLogger.d(TAG, "Cooldown de impresión registrado")
-
-                // Print if auto print is enabled
-                if (preferencesManager.autoPrint) {
-                    AppLogger.i(TAG, "Impresión automática habilitada - Iniciando impresión")
-                    printTransaction(printData)
-                } else {
-                    AppLogger.d(TAG, "Impresión automática deshabilitada")
-                }
-
-                hideProcessingDialog()
-                AppLogger.i(TAG, "Transacción procesada exitosamente")
-                showSuccessDialog(printData)
-
-                // Clear inputs after successful transaction
-                clearAllInputs()
-                AppLogger.d(TAG, "Campos limpiados después de transacción exitosa")
-
-            } catch (e: Exception) {
-                hideProcessingDialog()
-                AppLogger.e(TAG, "Error crítico en procesamiento de transacción", e)
-                showSnackbar("Error al procesar la transacción: ${e.message}")
-            }
-        }
-    }
 
 
     private fun isValidDate(date: String): Boolean {
@@ -982,7 +805,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
     }
 
     private fun createPrintData(): PrintData {
-        val config = serviceConfigs[currentServiceType] ?: throw IllegalStateException("Invalid service type")
+        val config = OptimizedServiceConfiguration.getServiceConfig(currentServiceType)
 
         val phone = if (config.showPhone) phoneInput.text.toString().replace("-", "") else ""
         val cedula = if (config.showCedula) cedulaInput.text.toString() else ""
@@ -1036,65 +859,6 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         return "GT${System.currentTimeMillis().toString().takeLast(8)}"
     }
 
-    private fun showServiceInfo() {
-        val info = when (currentServiceType) {
-            0 -> """
-                |Giros Tigo
-                |
-                |Permite enviar dinero de forma rápida y segura a cualquier número Tigo.
-                |
-                |Requisitos:
-                |• Número de teléfono del destinatario
-                |• Cédula del destinatario
-                |• Monto a enviar (mínimo 1,000 Gs.)
-                |
-                |Comisión: 1% del monto enviado
-            """.trimMargin()
-
-            1 -> """
-                |ANDE - Pago de Energía Eléctrica
-                |
-                |Paga tu factura de ANDE de manera fácil y rápida.
-                |
-                |Requisitos:
-                |• Número de NIS (Número de Identificación del Suministro)
-                |
-                |El monto será consultado automáticamente.
-            """.trimMargin()
-
-            2 -> """
-                |Reseteo de Cliente
-                |
-                |Restablece la información del cliente en el sistema.
-                |
-                |Requisitos:
-                |• Número de teléfono del cliente
-                |• Cédula del cliente
-                |• Fecha de nacimiento
-                |
-                |Este proceso no tiene costo.
-            """.trimMargin()
-
-            3 -> """
-                |Telefonía Tigo
-                |
-                |Gestiona servicios de telefonía Tigo.
-                |
-                |Requisitos:
-                |• Número de teléfono
-                |
-                |Servicios disponibles: consulta de saldo, recargas, paquetes.
-            """.trimMargin()
-
-            else -> "Información del servicio no disponible"
-        }
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Información del Servicio")
-            .setMessage(info)
-            .setPositiveButton("Entendido", null)
-            .show()
-    }
 
     private fun setupPermissions() {
         val permissions = arrayOf(
@@ -1148,48 +912,6 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         }
     }
 
-    private fun showResetClientMoreInfo() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Reseteo de Cliente - Información Adicional")
-            .setMessage("""
-                |El reseteo de cliente permite restaurar la información del usuario en el sistema Tigo Money.
-                |
-                |📋 Datos Requeridos:
-                |• Número de teléfono (línea Tigo)
-                |• Número de cédula de identidad
-                |• Fecha de nacimiento (DD/MM/AAAA)
-                |
-                |⚠️ Importante:
-                |• Verificar que todos los datos sean correctos
-                |• El cliente debe estar presente durante el proceso
-                |• Solo se puede realizar con líneas Tigo activas
-                |
-                |💡 Proceso:
-                |1. Completar todos los campos requeridos
-                |2. Presionar "Ejecutar USSD"
-                |3. Seguir las instrucciones en pantalla
-                |4. Confirmar el reseteo cuando se solicite
-                |
-                |📞 Soporte:
-                |En caso de problemas, contactar al *611 desde línea Tigo.
-            """.trimMargin())
-            .setPositiveButton("Entendido", null)
-            .setNeutralButton("Llamar Soporte") { _, _ ->
-                // Intent to call support
-                try {
-                    val callIntent = Intent(Intent.ACTION_CALL)
-                    callIntent.data = Uri.parse("tel:*611")
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-                        startActivity(callIntent)
-                    } else {
-                        showSnackbar("Permiso de llamada requerido")
-                    }
-                } catch (e: Exception) {
-                    showSnackbar("No se pudo realizar la llamada")
-                }
-            }
-            .show()
-    }
 
     private fun showSnackbar(message: String) {
         Snackbar.make(coordinatorLayout, message, Snackbar.LENGTH_SHORT).show()
@@ -1197,10 +919,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
 
     // USSD and SMS Integration Methods
     private fun hasUSSDSupport(serviceType: Int): Boolean {
-        return when (serviceType) {
-            0, 1, 2, 3, 7, 8, 9, 10, 11, 12 -> true // Services with USSD support
-            else -> false
-        }
+        return OptimizedServiceConfiguration.hasUSSDSupport(serviceType)
     }
 
     private fun makeCallWithSIM(phoneNumber: String, simSlot: Int = 0) {
@@ -1374,91 +1093,6 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
     }
 
 
-    private fun formatPrintDataWithLargeFont(printData: PrintData): ByteArray {
-        val output = mutableListOf<Byte>()
-        
-        // ESC @ - Initialize printer
-        output.addAll(byteArrayOf(0x1B, 0x40).toList())
-        
-        // ESC a 1 - Center alignment
-        output.addAll(byteArrayOf(0x1B, 0x61, 0x01).toList())
-        
-        // GS ! 0x11 - Large font (double width and height)
-        output.addAll(byteArrayOf(0x1D, 0x21, 0x11).toList())
-        
-        // Print header with large font
-        val header = "=====================\nGenio Tecni\n${printData.service}\n"
-        output.addAll(header.toByteArray().toList())
-        
-        // Reset font size for details
-        output.addAll(byteArrayOf(0x1B, 0x21, 0x00).toList())
-        
-        // Print details
-        val details = buildString {
-            append("Fecha: ${printData.date}\n")
-            append("Hora: ${printData.time}\n")
-            
-            if (printData.referenceData.ref1.isNotEmpty()) {
-                when (currentServiceType) {
-                    0, 1, 2 -> { // Giros, Retiros, Billetera
-                        append("Teléfono: ${phoneInput.text}\n")
-                        append("CI: ${cedulaInput.text}\n")
-                        append("Monto: ${amountInput.text} Gs.\n")
-                        append("Ref1: ${printData.referenceData.ref1}\n")
-                        if (printData.referenceData.ref2.isNotEmpty()) {
-                            append("Ref2: ${printData.referenceData.ref2}\n")
-                        }
-                    }
-                    3 -> { // Telefonía
-                        append("Teléfono: ${phoneInput.text}\n")
-                        append("Referencia: ${printData.referenceData.ref1}\n")
-                    }
-                    7 -> { // Reseteo
-                        append("Teléfono: ${phoneInput.text}\n")
-                        append("CI: ${cedulaInput.text}\n")
-                        append("Referencia: ${printData.referenceData.ref1}\n")
-                    }
-                    8, 9, 10 -> { // ANDE, ESSAP, COPACO
-                        append("Cuenta: ${cedulaInput.text}\n")
-                        append("Código: ${printData.referenceData.ref1}\n")
-                    }
-                    11, 12 -> { // Personal
-                        append("Teléfono: ${phoneInput.text}\n")
-                        append("Monto: ${amountInput.text} Gs.\n")
-                        append("Comprobante: ${printData.referenceData.ref1}\n")
-                    }
-                    else -> {
-                        append("Referencia: ${printData.referenceData.ref1}\n")
-                    }
-                }
-            } else {
-                // Simulation mode
-                append("MODO SIMULACIÓN\n")
-                if (phoneInput.text.toString().isNotEmpty()) {
-                    append("Teléfono: ${phoneInput.text}\n")
-                }
-                if (cedulaInput.text.toString().isNotEmpty()) {
-                    append("CI/Cuenta: ${cedulaInput.text}\n")
-                }
-                if (amountInput.text.toString().isNotEmpty()) {
-                    append("Monto: ${amountInput.text} Gs.\n")
-                }
-                append("Ref: ${generateReference()}\n")
-            }
-        }
-        
-        output.addAll(details.toByteArray().toList())
-        
-        // Large font for footer
-        output.addAll(byteArrayOf(0x1D, 0x21, 0x11).toList())
-        output.addAll("=====================\n".toByteArray().toList())
-        
-        // Reset font and add line feeds
-        output.addAll(byteArrayOf(0x1B, 0x21, 0x00).toList())
-        output.addAll("\n\n\n".toByteArray().toList())
-        
-        return output.toByteArray()
-    }
 
     private fun showPrintErrorDialog(printData: PrintData) {
         MaterialAlertDialogBuilder(this)

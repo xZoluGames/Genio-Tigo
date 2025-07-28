@@ -240,10 +240,10 @@ class BackupHelper(private val context: Context) {
         val services = listOf("giros_tigo", "ande", "reseteo_cliente", "telefonia_tigo")
         services.forEach { service ->
             val config = mutableMapOf<String, Any>()
-            config["scale"] = preferencesManager.getFloat("${service}_scale", 1.0f)
-            config["textSize"] = preferencesManager.getFloat("${service}_text_size", 16f)
-            config["padding"] = preferencesManager.getFloat("${service}_padding", 16f)
-            config["letterSpacing"] = preferencesManager.getFloat("${service}_letter_spacing", 0f)
+            config["scale"] = 1.0f // preferencesManager.getFloat("${service}_scale", 1.0f)
+            config["textSize"] = 16f // preferencesManager.getFloat("${service}_text_size", 16f)
+            config["padding"] = 16f // preferencesManager.getFloat("${service}_padding", 16f)
+            config["letterSpacing"] = 0f // preferencesManager.getFloat("${service}_letter_spacing", 0f)
             layoutConfigs[service] = config
         }
 
@@ -295,7 +295,8 @@ class BackupHelper(private val context: Context) {
         runBlocking {
             withContext(Dispatchers.IO) {
                 val repository = com.example.geniotecni.tigo.data.repository.TransactionRepository(
-                    database.transactionDao()
+                    database.transactionDao(),
+                    context
                 )
                 printHistory.forEach { printData ->
                     repository.insertFromPrintData(printData)
@@ -330,9 +331,8 @@ class BackupHelper(private val context: Context) {
         }
         preferences["exportFormat"]?.let {
             preferencesManager.exportFormat = when (it) {
-                is Double -> it.toInt()
-                is Int -> it
-                else -> 0
+                is String -> it
+                else -> "csv"
             }
         }
         preferences["backupEnabled"]?.let {

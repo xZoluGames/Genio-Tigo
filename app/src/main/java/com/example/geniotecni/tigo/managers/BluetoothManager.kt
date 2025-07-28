@@ -7,22 +7,23 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.example.geniotecni.tigo.utils.BaseManager
+import com.example.geniotecni.tigo.utils.AppConfig
 import com.example.geniotecni.tigo.utils.AppLogger
 import java.io.IOException
 import java.util.*
 
-class BluetoothManager(private val context: Context) {
+class BluetoothManager(context: Context) : BaseManager(context, "BluetoothManager") {
     
     companion object {
+        private const val BLUETOOTH_UUID = AppConfig.Bluetooth.UUID
+        private const val PREFS_NAME = AppConfig.BLUETOOTH_PREFS
+        private const val KEY_DEVICE_ADDRESS = AppConfig.PreferenceKeys.KEY_DEVICE_ADDRESS
+        private const val KEY_DEVICE_NAME = AppConfig.PreferenceKeys.KEY_DEVICE_NAME
         private const val TAG = "BluetoothManager"
-        private const val BLUETOOTH_UUID = "00001101-0000-1000-8000-00805F9B34FB"
-        private const val PREFS_NAME = "MyPrefs"
-        private const val KEY_DEVICE_ADDRESS = "BluetoothDeviceAddress"
-        private const val KEY_DEVICE_NAME = "BluetoothDeviceName"
     }
     
     private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-    private val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     
     fun isBluetoothSupported(): Boolean {
         return bluetoothAdapter != null
@@ -33,24 +34,24 @@ class BluetoothManager(private val context: Context) {
     }
     
     fun hasSelectedDevice(): Boolean {
-        val deviceAddress = sharedPreferences.getString(KEY_DEVICE_ADDRESS, null)
-        return !deviceAddress.isNullOrEmpty()
+        val deviceAddress = getString(KEY_DEVICE_ADDRESS)
+        return deviceAddress.isNotEmpty()
     }
     
     fun getSelectedDeviceAddress(): String? {
-        return sharedPreferences.getString(KEY_DEVICE_ADDRESS, null)
+        val address = getString(KEY_DEVICE_ADDRESS)
+        return if (address.isEmpty()) null else address
     }
     
     fun getSelectedDeviceName(): String? {
-        return sharedPreferences.getString(KEY_DEVICE_NAME, null)
+        val name = getString(KEY_DEVICE_NAME)
+        return if (name.isEmpty()) null else name
     }
     
     fun saveSelectedDevice(address: String, name: String) {
-        sharedPreferences.edit()
-            .putString(KEY_DEVICE_ADDRESS, address)
-            .putString(KEY_DEVICE_NAME, name)
-            .apply()
-        AppLogger.i(TAG, "Dispositivo Bluetooth guardado: $name ($address)")
+        savePreference(KEY_DEVICE_ADDRESS, address)
+        savePreference(KEY_DEVICE_NAME, name)
+        AppLogger.i(tag, "Dispositivo Bluetooth guardado: $name ($address)")
     }
     
     @SuppressLint("MissingPermission")

@@ -1,15 +1,11 @@
-package com.example.geniotecni.tigo
+package com.example.geniotecni.tigo.helpers
 
 import android.content.Context
-import android.content.SharedPreferences
-import com.google.gson.Gson
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat

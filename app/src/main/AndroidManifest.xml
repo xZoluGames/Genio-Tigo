@@ -22,7 +22,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <application
-            android:name=".GenioTecniApplication"
+            android:name=".GenioTecniApplicationSimple"
             android:allowBackup="true"
             android:icon="@drawable/ic_icgeniotecni_round"
             android:label="@string/app_name"

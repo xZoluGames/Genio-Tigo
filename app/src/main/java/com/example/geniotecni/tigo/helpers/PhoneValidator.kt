@@ -1,4 +1,4 @@
-package com.example.geniotecni.tigo
+package com.example.geniotecni.tigo.helpers
 
 object PhoneValidator {
 

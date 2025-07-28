@@ -3,44 +3,46 @@ package com.example.geniotecni.tigo.managers
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Context
-import android.content.Intent
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.view.ViewTreeObserver
+import android.widget.CheckBox
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.content.ContextCompat
 import com.example.geniotecni.tigo.R
+import com.example.geniotecni.tigo.utils.AppLogger
+import com.example.geniotecni.tigo.utils.BaseManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import org.json.JSONObject
-import java.io.File
-import android.graphics.Color
-import android.graphics.DashPathEffect
-import android.graphics.drawable.Drawable
-import android.util.Log
-import android.view.ViewTreeObserver
-import androidx.core.content.ContextCompat
-import com.example.geniotecni.tigo.managers.PreferencesManager
-import com.example.geniotecni.tigo.utils.AppLogger
 
 class EditModeManager(
-    private val context: Context,
+    context: Context,
     private val activity: AppCompatActivity,
     private val rootLayout: CoordinatorLayout,
     private val preferencesManager: PreferencesManager
-) {
+) : BaseManager(context, "EditModeManager") {
     companion object {
         private const val TAG = "EditModeManager"
         private const val COMPONENT_SCALE_KEY = "component_scale"
@@ -61,17 +63,20 @@ class EditModeManager(
     private var isDragging = false
     private var originalPositions = mutableMapOf<View, PositionInfo>()
     private val touchListeners = mutableMapOf<View, View.OnTouchListener>()
+    private val originalClickListeners = mutableMapOf<View, View.OnClickListener?>()
 
     // Track constraint relationships
     private val constraintRelationships = mutableMapOf<View, ConstraintInfo>()
     
     // Track original background drawables for highlighting
     private val originalBackgrounds = mutableMapOf<View, Drawable?>()
+    
+    // Edit mode state
+    private var isEditModeEnabled = false
 
     // Edit mode UI components - nullable since they might not exist in all layouts
-    private var editButton: MaterialButton? = null
+    private var editButton: FloatingActionButton? = null
     private var editButtonsContainer: View? = null
-    private var cancelButton: MaterialButton? = null
     private var saveButton: MaterialButton? = null
     private var resetButton: MaterialButton? = null
     private var exportButton: MaterialButton? = null
@@ -127,7 +132,8 @@ class EditModeManager(
             findViews()
             setupListeners()
             createSelectionOverlay()
-            loadCurrentConfiguration()
+            // Note: loadCurrentConfiguration() is called in setCurrentServiceType() 
+            // so we don't call it here to avoid loading default values
             analyzeConstraints()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -136,12 +142,20 @@ class EditModeManager(
     }
 
     private fun findViews() {
+        Log.d(TAG, "=== INICIANDO findViews ===")
         // Try to find edit mode UI elements, but don't fail if they don't exist
         try {
             editButton = activity.findViewById(R.id.editButton)
             Log.d(TAG, "EditButton encontrado: ${editButton != null}")
+            if (editButton != null) {
+                Log.d(TAG, "EditButton tipo: ${editButton!!::class.java.simpleName}")
+                Log.d(TAG, "EditButton visibility: ${editButton!!.visibility}")
+                Log.d(TAG, "EditButton isClickable: ${editButton!!.isClickable}")
+                Log.d(TAG, "EditButton isEnabled: ${editButton!!.isEnabled}")
+            } else {
+                Log.e(TAG, "ERROR CRÍTICO: EditButton es null - verificar R.id.editButton en layout")
+            }
             editButtonsContainer = activity.findViewById(R.id.editButtonsContainer)
-            cancelButton = activity.findViewById(R.id.cancelButton)
             saveButton = activity.findViewById(R.id.saveButton)
             resetButton = activity.findViewById(R.id.resetButton)
             exportButton = activity.findViewById(R.id.exportButton)
@@ -158,7 +172,15 @@ class EditModeManager(
             applyChangesButton = activity.findViewById(R.id.applyChangesButton)
             cancelChangesButton = activity.findViewById(R.id.cancelChangesButton)
             groupEditCheckbox = activity.findViewById(R.id.groupEditCheckbox)
+            
+            Log.d(TAG, "=== RESUMEN DE VISTAS ENCONTRADAS ===")
+            Log.d(TAG, "editButton: ${editButton != null}")
+            Log.d(TAG, "editButtonsContainer: ${editButtonsContainer != null}")
+            Log.d(TAG, "editControlsPanel: ${editControlsPanel != null}")
+            Log.d(TAG, "saveButton: ${saveButton != null}")
+            Log.d(TAG, "=== FIN findViews ===")
         } catch (e: Exception) {
+            Log.e(TAG, "ERROR CRÍTICO en findViews", e)
             Log.w(TAG, "Algunos elementos de EditMode no encontrados - modo edit deshabilitado")
         }
     }
@@ -200,11 +222,31 @@ class EditModeManager(
     }
 
     private fun setupListeners() {
-        editButton?.setOnClickListener { 
-            Log.d(TAG, "EditButton presionado - iniciando toggleEditMode")
-            toggleEditMode() 
+        Log.d(TAG, "=== CONFIGURANDO LISTENERS ===")
+
+        if (editButton == null) {
+            Log.e(TAG, "ERROR CRÍTICO: No se puede configurar listener - editButton es null")
+            return
         }
-        cancelButton?.setOnClickListener { exitEditMode(false) }
+
+        // Remover cualquier listener previo y agregar el nuevo
+        editButton?.setOnClickListener(null)
+        editButton?.setOnClickListener {
+            Log.d(TAG, "=== EDITBUTTON PRESIONADO ===")
+            Log.d(TAG, "Timestamp: ${System.currentTimeMillis()}")
+            Log.d(TAG, "Thread: ${Thread.currentThread().name}")
+            Log.d(TAG, "EditButton state - enabled: ${editButton?.isEnabled}, clickable: ${editButton?.isClickable}")
+            Log.d(TAG, "Modo actual antes de toggle: $isEditMode")
+            try {
+                toggleEditMode()
+                Log.d(TAG, "toggleEditMode ejecutado exitosamente")
+            } catch (e: Exception) {
+                Log.e(TAG, "ERROR CRÍTICO en toggleEditMode", e)
+                showSnackbar("Error: ${e.message}")
+            }
+        }
+
+        Log.d(TAG, "Listener del editButton configurado correctamente")
         saveButton?.setOnClickListener { saveAllChanges() }
         resetButton?.setOnClickListener { showResetConfirmation() }
         exportButton?.setOnClickListener { exportConfiguration() }
@@ -215,26 +257,50 @@ class EditModeManager(
             selectedComponent?.let { component ->
                 component.scaleX = value
                 component.scaleY = value
+
+                // Para ImageView, también ajustar el layout params para que se adapte mejor
+                if (component is ImageView) {
+                    val baseSize = 72 // Tamaño base en dp
+                    val newSize = (baseSize * value).toInt()
+
+                    component.layoutParams?.let { params ->
+                        params.width = (newSize * context.resources.displayMetrics.density).toInt()
+                        params.height = (newSize * context.resources.displayMetrics.density).toInt()
+                        component.layoutParams = params
+                    }
+                }
+
                 selectionOverlay?.updateSelection(component)
             }
         }
 
         textSizeSlider?.addOnChangeListener { _, value, _ ->
             selectedComponent?.let { component ->
-                if (groupEditCheckbox?.isChecked == true && isTextInputLayout(component)) {
-                    // Apply to all TextInputLayout components when group edit is enabled
-                    applyTextSizeToAllTextInputs(value)
-                } else {
-                    // Apply only to selected component
-                    when (component) {
-                        is TextView -> {
-                            Log.d("EditModeManager", "Aplicando textSize al TextView: ${value}sp")
-                            component.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
-                        }
-                        is TextInputLayout -> {
-                            component.editText?.let { editText ->
-                                Log.d("EditModeManager", "Aplicando textSize al EditText: ${value}sp")
-                                editText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
+                when {
+                    // Edición grupal de TextInputLayouts
+                    groupEditCheckbox?.isChecked == true && component is TextInputLayout -> {
+                        applyTextSizeToAllTextInputs(value)
+                    }
+                    // NUEVO: Edición grupal de MaterialButtons
+                    groupEditCheckbox?.isChecked == true && component is MaterialButton -> {
+                        applyTextSizeToAllButtons(value)
+                    }
+                    // Edición individual
+                    else -> {
+                        when (component) {
+                            is TextView -> {
+                                Log.d("EditModeManager", "Aplicando textSize al TextView: ${value}sp")
+                                component.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
+                            }
+                            is TextInputLayout -> {
+                                component.editText?.let { editText ->
+                                    Log.d("EditModeManager", "Aplicando textSize al EditText: ${value}sp")
+                                    editText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
+                                }
+                            }
+                            is MaterialButton -> {  // NUEVO
+                                Log.d("EditModeManager", "Aplicando textSize al MaterialButton: ${value}sp")
+                                component.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, value)
                             }
                         }
                     }
@@ -244,14 +310,22 @@ class EditModeManager(
 
         letterSpacingSlider?.addOnChangeListener { _, value, _ ->
             selectedComponent?.let { component ->
-                if (groupEditCheckbox?.isChecked == true && isTextInputLayout(component)) {
-                    // Apply to all TextInputLayout components when group edit is enabled
-                    applyLetterSpacingToAllTextInputs(value)
-                } else {
-                    // Apply only to selected component
-                    when (component) {
-                        is TextView -> component.letterSpacing = value
-                        is TextInputLayout -> component.editText?.letterSpacing = value
+                when {
+                    // Edición grupal de TextInputLayouts
+                    groupEditCheckbox?.isChecked == true && component is TextInputLayout -> {
+                        applyLetterSpacingToAllTextInputs(value)
+                    }
+                    // NUEVO: Edición grupal de MaterialButtons
+                    groupEditCheckbox?.isChecked == true && component is MaterialButton -> {
+                        applyLetterSpacingToAllButtons(value)
+                    }
+                    // Edición individual
+                    else -> {
+                        when (component) {
+                            is TextView -> component.letterSpacing = value
+                            is TextInputLayout -> component.editText?.letterSpacing = value
+                            is MaterialButton -> component.letterSpacing = value  // NUEVO
+                        }
                     }
                 }
             }
@@ -278,28 +352,27 @@ class EditModeManager(
     
     private fun addSliderTouchListeners() {
         // Track original alpha values
-        val originalAlphaMap = mutableMapOf<View, Float>()
-        
+        val originalPanelAlpha = 1.0f
+
         // Common touch listener for all sliders
         val sliderTouchListener = object : Slider.OnSliderTouchListener {
             override fun onStartTrackingTouch(slider: Slider) {
-                selectedComponent?.let { component ->
-                    // Store original alpha and make component transparent
-                    originalAlphaMap[component] = component.alpha
-                    component.alpha = 0.5f // Set to 50% transparency
-                }
+                // Hacer transparente el panel de controles completo
+                editControlsPanel?.animate()
+                    ?.alpha(0.3f)  // 30% de opacidad
+                    ?.setDuration(150)
+                    ?.start()
             }
-            
+
             override fun onStopTrackingTouch(slider: Slider) {
-                selectedComponent?.let { component ->
-                    // Restore original alpha
-                    val originalAlpha = originalAlphaMap[component] ?: 1.0f
-                    component.alpha = originalAlpha
-                    originalAlphaMap.remove(component)
-                }
+                // Restaurar opacidad del panel
+                editControlsPanel?.animate()
+                    ?.alpha(originalPanelAlpha)
+                    ?.setDuration(150)
+                    ?.start()
             }
         }
-        
+
         // Apply the same touch listener to all sliders
         scaleSlider?.addOnSliderTouchListener(sliderTouchListener)
         textSizeSlider?.addOnSliderTouchListener(sliderTouchListener)
@@ -324,7 +397,7 @@ class EditModeManager(
 
         // Change edit button to close (X) with red background
         editButton?.let { button ->
-            button.setIconResource(R.drawable.ic_close)
+            button.setImageResource(R.drawable.ic_close)
             button.backgroundTintList = ContextCompat.getColorStateList(context, android.R.color.holo_red_dark)
         }
 
@@ -346,7 +419,14 @@ class EditModeManager(
     }
 
     private fun exitEditMode(saveChanges: Boolean) {
-        if (!saveChanges) {
+        if (saveChanges) {
+            // Save all component configurations when exiting edit mode
+            Log.d(TAG, "Guardando configuración al salir del modo edición para servicio: $currentServiceType")
+            getAllEditableViews().forEach { view ->
+                saveComponentConfiguration(view)
+            }
+            Log.d(TAG, "Configuración guardada exitosamente")
+        } else {
             restoreOriginalPositions()
         }
 
@@ -354,7 +434,7 @@ class EditModeManager(
         
         // Restore edit button to original state
         editButton?.let { button ->
-            button.setIconResource(R.drawable.ic_edit)
+            button.setImageResource(R.drawable.ic_edit)
             button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.md_theme_light_primary)
         }
         
@@ -376,6 +456,16 @@ class EditModeManager(
 
     private fun setupEditModeTouchListeners() {
         getAllEditableViews().forEach { view ->
+            // Store original click listener before overriding
+            val originalClickListener = when (view.id) {
+                R.id.executeUSSDButton, R.id.manualReferenceButton -> {
+                    // For buttons, we don't want to store anything as they have their listeners set in MainActivity
+                    null
+                }
+                else -> null
+            }
+            originalClickListeners[view] = originalClickListener
+            
             val touchListener = View.OnTouchListener { v, event ->
                 if (isEditMode) {
                     handleComponentTouch(view, event)
@@ -399,14 +489,16 @@ class EditModeManager(
                 }
             }
             
-            // Add single tap listener for edit mode selection (for non-image components)
-            view.setOnClickListener {
-                if (isEditMode) {
-                    selectComponent(view)
-                    showEditControls(view)
-                } else {
-                    // Allow normal functionality when not in edit mode
-                    view.performClick()
+            // Only override click listener for non-button components in edit mode
+            if (view.id != R.id.executeUSSDButton && view.id != R.id.manualReferenceButton) {
+                view.setOnClickListener {
+                    if (isEditMode) {
+                        selectComponent(view)
+                        showEditControls(view)
+                    } else {
+                        // Allow normal functionality when not in edit mode
+                        originalClickListeners[view]?.onClick(view)
+                    }
                 }
             }
         }
@@ -445,7 +537,14 @@ class EditModeManager(
         touchListeners.forEach { (view, _) ->
             view.setOnTouchListener(null)
             view.setOnLongClickListener(null)
-            view.setOnClickListener(null)
+            
+            // Only restore click listener for non-button components
+            if (view.id != R.id.executeUSSDButton && view.id != R.id.manualReferenceButton) {
+                // Restore original click listener
+                view.setOnClickListener(originalClickListeners[view])
+            }
+            // For buttons, don't touch their click listeners as they are managed by MainActivity
+            
             view.isClickable = true
             
             // Restore EditText functionality for TextInputLayout components
@@ -458,6 +557,7 @@ class EditModeManager(
             }
         }
         touchListeners.clear()
+        originalClickListeners.clear()
     }
 
     private fun handleComponentTouch(view: View, event: MotionEvent): Boolean {
@@ -522,66 +622,89 @@ class EditModeManager(
     private fun showEditControls(view: View) {
         Log.d("EditModeManager", "=== MOSTRANDO CONTROLES DE EDICIÓN ===")
         Log.d("EditModeManager", "Componente seleccionado: ${getComponentName(view)}")
-        Log.d("EditModeManager", "View ID: ${view.id}")
-        Log.d("EditModeManager", "ScaleX actual: ${view.scaleX}")
-        Log.d("EditModeManager", "ScaleY actual: ${view.scaleY}")
-        Log.d("EditModeManager", "TranslationX actual: ${view.translationX}")
-        Log.d("EditModeManager", "TranslationY actual: ${view.translationY}")
-        
+
         selectedComponent = view
 
         // Update control panel title
         editControlsTitle?.text = "Editando: ${getComponentName(view)}"
 
-        // Set current values with stepSize alignment and clamping
-        val alignedScale = alignToStepSize(view.scaleX, 0.5f, 0.1f)
-        Log.d("EditModeManager", "Scale alineado: $alignedScale")
-        scaleSlider?.value = alignedScale
+        // Obtener referencia al LinearLayout que contiene el scale
+        val scaleControl = activity.findViewById<LinearLayout>(R.id.scaleControl)
 
-        when (view) {
-            is TextView -> {
-                Log.d("EditModeManager", "Configurando controles para TextView")
-                Log.d("EditModeManager", "TextSize original: ${view.textSize}")
-                Log.d("EditModeManager", "LetterSpacing original: ${view.letterSpacing}")
-                
-                textSizeControl?.visibility = View.VISIBLE
-                letterSpacingControl?.visibility = View.VISIBLE
-                
-                // Convert px to sp and clamp to slider range (12-28)
-                val textSizeInSp = view.textSize / context.resources.displayMetrics.scaledDensity
-                val clampedTextSize = textSizeInSp.coerceIn(12f, 28f)
-                val alignedTextSize = alignToStepSize(clampedTextSize, 12f, 1f)
-                Log.d("EditModeManager", "TextSize original: ${view.textSize}px = ${textSizeInSp}sp, clamped y alineado: $alignedTextSize")
-                textSizeSlider?.value = alignedTextSize
-                
-                val alignedLetterSpacing = alignToStepSize(view.letterSpacing, 0f, 0.01f)
-                Log.d("EditModeManager", "LetterSpacing alineado: $alignedLetterSpacing")
-                letterSpacingSlider?.value = alignedLetterSpacing
+        // Determinar qué controles mostrar basándose en el tipo de componente
+        val isTextComponent = view is TextView || view is TextInputLayout || view is MaterialButton
+        val isImageComponent = view is ImageView
+
+        if (isImageComponent) {
+            // Para imágenes: mostrar solo scale con rango más amplio
+            scaleControl?.visibility = View.VISIBLE
+            textSizeControl?.visibility = View.GONE
+            letterSpacingControl?.visibility = View.GONE
+            groupEditCheckbox?.visibility = View.GONE
+
+            // Para imágenes, permitir un rango mayor de escala
+            scaleSlider?.valueFrom = 0.3f
+            scaleSlider?.valueTo = 3.0f
+            scaleSlider?.stepSize = 0.1f
+
+            // Set current scale value
+            val alignedScale = alignToStepSize(view.scaleX, 0.3f, 0.1f)
+            scaleSlider?.value = alignedScale
+        } else if (isTextComponent) {
+            // Para componentes de texto: ocultar scale, mostrar solo texto
+            scaleControl?.visibility = View.GONE
+            textSizeControl?.visibility = View.VISIBLE
+            letterSpacingControl?.visibility = View.VISIBLE
+
+            // Restaurar valores normales del slider si se cambió
+            scaleSlider?.valueFrom = 0.5f
+            scaleSlider?.valueTo = 2.0f
+            scaleSlider?.stepSize = 0.1f
+
+            // Actualizar texto del checkbox según el tipo
+            groupEditCheckbox?.visibility = when (view) {
+                is TextInputLayout -> {
+                    groupEditCheckbox?.text = "Editar todos los campos de texto"
+                    View.VISIBLE
+                }
+                is MaterialButton -> {
+                    groupEditCheckbox?.text = "Editar todos los botones"
+                    View.VISIBLE
+                }
+                else -> View.GONE
             }
-            is TextInputLayout -> {
-                Log.d("EditModeManager", "Configurando controles para TextInputLayout")
-                textSizeControl?.visibility = View.VISIBLE
-                letterSpacingControl?.visibility = View.VISIBLE
-                view.editText?.let { editText ->
-                    Log.d("EditModeManager", "EditText TextSize original: ${editText.textSize}")
-                    Log.d("EditModeManager", "EditText LetterSpacing original: ${editText.letterSpacing}")
-                    
-                    // Convert px to sp and clamp to slider range (12-28)
-                    val textSizeInSp = editText.textSize / context.resources.displayMetrics.scaledDensity
+
+            // Configurar valores de texto...
+            when (view) {
+                is TextView -> {
+                    val textSizeInSp = view.textSize / context.resources.displayMetrics.scaledDensity
                     val clampedTextSize = textSizeInSp.coerceIn(12f, 28f)
                     val alignedTextSize = alignToStepSize(clampedTextSize, 12f, 1f)
-                    Log.d("EditModeManager", "EditText TextSize original: ${editText.textSize}px = ${textSizeInSp}sp, clamped y alineado: $alignedTextSize")
                     textSizeSlider?.value = alignedTextSize
-                    
-                    val alignedLetterSpacing = alignToStepSize(editText.letterSpacing, 0f, 0.01f)
-                    Log.d("EditModeManager", "EditText LetterSpacing alineado: $alignedLetterSpacing")
+
+                    val alignedLetterSpacing = alignToStepSize(view.letterSpacing, 0f, 0.01f)
                     letterSpacingSlider?.value = alignedLetterSpacing
                 }
-            }
-            else -> {
-                Log.d("EditModeManager", "Configurando controles para componente genérico (sin texto)")
-                textSizeControl?.visibility = View.GONE
-                letterSpacingControl?.visibility = View.GONE
+                is TextInputLayout -> {
+                    view.editText?.let { editText ->
+                        val textSizeInSp = editText.textSize / context.resources.displayMetrics.scaledDensity
+                        val clampedTextSize = textSizeInSp.coerceIn(12f, 28f)
+                        val alignedTextSize = alignToStepSize(clampedTextSize, 12f, 1f)
+                        textSizeSlider?.value = alignedTextSize
+
+                        val alignedLetterSpacing = alignToStepSize(editText.letterSpacing, 0f, 0.01f)
+                        letterSpacingSlider?.value = alignedLetterSpacing
+                    }
+                }
+                is MaterialButton -> {
+                    val textSizeInSp = view.textSize / context.resources.displayMetrics.scaledDensity
+                    val clampedTextSize = textSizeInSp.coerceIn(12f, 28f)
+                    val alignedTextSize = alignToStepSize(clampedTextSize, 12f, 1f)
+                    textSizeSlider?.value = alignedTextSize
+
+                    val alignedLetterSpacing = alignToStepSize(view.letterSpacing, 0f, 0.01f)
+                    letterSpacingSlider?.value = alignedLetterSpacing
+                }
             }
         }
 
@@ -593,8 +716,6 @@ class EditModeManager(
             ?.translationY(0f)
             ?.setDuration(300)
             ?.start()
-            
-        Log.d("EditModeManager", "=== CONTROLES DE EDICIÓN MOSTRADOS ===")
     }
 
     private fun hideEditControls() {
@@ -616,7 +737,8 @@ class EditModeManager(
             R.id.cedulaInputLayout -> "Campo de Cédula"
             R.id.amountInputLayout -> "Campo de Monto"
             R.id.dateInputLayout -> "Campo de Fecha"
-            // Removed button mappings - buttons no longer exist
+            R.id.executeUSSDButton -> "Botón Ejecutar USSD"        // NUEVO
+            R.id.manualReferenceButton -> "Botón Referencia Manual" // NUEVO
             else -> "Componente"
         }
     }
@@ -649,7 +771,8 @@ class EditModeManager(
             R.id.serviceImage, R.id.serviceTitle,
             R.id.phoneInputLayout, R.id.cedulaInputLayout,
             R.id.amountInputLayout, R.id.dateInputLayout,
-            // Removed button IDs - buttons no longer exist
+            R.id.executeUSSDButton,    // NUEVO: Botón Ejecutar USSD
+            R.id.manualReferenceButton  // NUEVO: Botón Referencia Manual
         )
 
         ids.forEach { id ->
@@ -660,26 +783,28 @@ class EditModeManager(
     }
 
     private fun saveAllChanges() {
-        getAllEditableViews().forEach { view ->
-            saveComponentConfiguration(view)
-        }
+        // Save all changes and exit edit mode
+        // Note: exitEditMode(true) will also save all changes, so we just call it directly
         exitEditMode(true)
     }
 
     private fun saveComponentConfiguration(view: View) {
         val componentKey = getComponentKey(view)
+        val componentName = getComponentName(view)
 
         // Save only scale (no position changes allowed)
         preferencesManager.setFloat(
             getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey), view.scaleX
         )
+        
+        Log.d(TAG, "Guardando configuración para $componentName: scale=${view.scaleX}")
 
         // Save text properties if applicable
         when (view) {
             is TextView -> {
                 // Convert px to sp for consistent storage
                 val textSizeInSp = view.textSize / context.resources.displayMetrics.scaledDensity
-                Log.d("EditModeManager", "Guardando textSize: ${view.textSize}px = ${textSizeInSp}sp")
+                Log.d(TAG, "Guardando $componentName textSize: ${view.textSize}px = ${textSizeInSp}sp, letterSpacing=${view.letterSpacing}")
                 preferencesManager.setFloat(
                     getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), textSizeInSp
                 )
@@ -691,7 +816,7 @@ class EditModeManager(
                 view.editText?.let { editText ->
                     // Convert px to sp for consistent storage
                     val textSizeInSp = editText.textSize / context.resources.displayMetrics.scaledDensity
-                    Log.d("EditModeManager", "Guardando editText textSize: ${editText.textSize}px = ${textSizeInSp}sp")
+                    Log.d(TAG, "Guardando $componentName editText textSize: ${editText.textSize}px = ${textSizeInSp}sp, letterSpacing=${editText.letterSpacing}")
                     preferencesManager.setFloat(
                         getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), textSizeInSp
                     )
@@ -699,6 +824,17 @@ class EditModeManager(
                         getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), editText.letterSpacing
                     )
                 }
+            }
+            is MaterialButton -> {  // NUEVO
+                // Convert px to sp for consistent storage
+                val textSizeInSp = view.textSize / context.resources.displayMetrics.scaledDensity
+                Log.d(TAG, "Guardando $componentName button textSize: ${view.textSize}px = ${textSizeInSp}sp, letterSpacing=${view.letterSpacing}")
+                preferencesManager.setFloat(
+                    getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), textSizeInSp
+                )
+                preferencesManager.setFloat(
+                    getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), view.letterSpacing
+                )
             }
         }
     }
@@ -716,39 +852,64 @@ class EditModeManager(
             return
         }
 
-        // Load only scale (no position loading)
-        view.scaleX = preferencesManager.getFloat(scaleKey, 1.0f)
-        view.scaleY = view.scaleX
+        // Load scale
+        val scale = preferencesManager.getFloatValue(scaleKey, 1.0f)
+        view.scaleX = scale
+        view.scaleY = scale
+
+        // Para ImageView, también ajustar el tamaño del layout
+        if (view is ImageView) {
+            val baseSize = 72 // Tamaño base en dp
+            val newSize = (baseSize * scale).toInt()
+
+            view.layoutParams?.let { params ->
+                params.width = (newSize * context.resources.displayMetrics.density).toInt()
+                params.height = (newSize * context.resources.displayMetrics.density).toInt()
+                view.layoutParams = params
+            }
+        }
 
         // Load text properties if applicable
         when (view) {
             is TextView -> {
-                val textSizeInSp = preferencesManager.getFloat(
+                val textSizeInSp = preferencesManager.getFloatValue(
                     getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16f
                 )
-                val letterSpacing = preferencesManager.getFloat(
+                val letterSpacing = preferencesManager.getFloatValue(
                     getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0f
                 )
 
-                Log.d("EditModeManager", "Cargando textSize: ${textSizeInSp}sp")
+                Log.d(TAG, "Cargando ${getComponentName(view)} textSize: ${textSizeInSp}sp, letterSpacing: $letterSpacing")
                 // Use setTextSize with TypedValue.COMPLEX_UNIT_SP to ensure correct unit
                 view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeInSp)
                 view.letterSpacing = letterSpacing
             }
             is TextInputLayout -> {
                 view.editText?.let { editText ->
-                    val textSizeInSp = preferencesManager.getFloat(
+                    val textSizeInSp = preferencesManager.getFloatValue(
                         getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16f
                     )
-                    val letterSpacing = preferencesManager.getFloat(
+                    val letterSpacing = preferencesManager.getFloatValue(
                         getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0f
                     )
 
-                    Log.d("EditModeManager", "Cargando editText textSize: ${textSizeInSp}sp")
+                    Log.d(TAG, "Cargando ${getComponentName(view)} editText textSize: ${textSizeInSp}sp, letterSpacing: $letterSpacing")
                     // Use setTextSize with TypedValue.COMPLEX_UNIT_SP to ensure correct unit
                     editText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeInSp)
                     editText.letterSpacing = letterSpacing
                 }
+            }
+            is MaterialButton -> {
+                val textSizeInSp = preferencesManager.getFloatValue(
+                    getServiceComponentKey(COMPONENT_TEXT_SIZE_KEY, componentKey), 16f
+                )
+                val letterSpacing = preferencesManager.getFloatValue(
+                    getServiceComponentKey(COMPONENT_LETTER_SPACING_KEY, componentKey), 0f
+                )
+
+                Log.d(TAG, "Cargando ${getComponentName(view)} button textSize: ${textSizeInSp}sp, letterSpacing: $letterSpacing")
+                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeInSp)
+                view.letterSpacing = letterSpacing
             }
         }
         val startTime = System.currentTimeMillis()
@@ -764,7 +925,8 @@ class EditModeManager(
             R.id.cedulaInputLayout -> "cedulaInput"
             R.id.amountInputLayout -> "amountInput"
             R.id.dateInputLayout -> "dateInput"
-            // Removed button key mappings - buttons no longer exist
+            R.id.executeUSSDButton -> "executeUSSDButton"        // NUEVO
+            R.id.manualReferenceButton -> "manualReferenceButton" // NUEVO
             else -> "unknown_${component.id}"
         }
     }
@@ -794,22 +956,42 @@ class EditModeManager(
     }
 
     private fun resetComponentToDefault(view: View) {
-        // Reset only scale (no position reset needed)
-        view.scaleX = 1.0f
-        view.scaleY = 1.0f
-
         when (view) {
+            is ImageView -> {
+                // Para imágenes, usar escala 1.0 como default
+                view.scaleX = 1.0f
+                view.scaleY = 1.0f
+            }
             is TextView -> {
+                // Reset scale para texto
+                view.scaleX = 1.0f
+                view.scaleY = 1.0f
                 // Use default values that match the slider ranges with proper SP units
-                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f) // Within range 12-28
-                view.letterSpacing = 0f // Within range 0-0.1
+                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                view.letterSpacing = 0f
             }
             is TextInputLayout -> {
+                // Reset scale
+                view.scaleX = 1.0f
+                view.scaleY = 1.0f
                 view.editText?.let { editText ->
                     // Use default values that match the slider ranges with proper SP units
-                    editText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f) // Within range 12-28
-                    editText.letterSpacing = 0f // Within range 0-0.1
+                    editText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                    editText.letterSpacing = 0f
                 }
+            }
+            is MaterialButton -> {
+                // Reset scale
+                view.scaleX = 1.0f
+                view.scaleY = 1.0f
+                // Use default values that match the slider ranges with proper SP units
+                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                view.letterSpacing = 0f
+            }
+            else -> {
+                // Para cualquier otro componente
+                view.scaleX = 1.0f
+                view.scaleY = 1.0f
             }
         }
     }
@@ -850,6 +1032,10 @@ class EditModeManager(
                             componentConfig.put("textSize", editText.textSize)
                             componentConfig.put("letterSpacing", editText.letterSpacing)
                         }
+                    }
+                    is MaterialButton -> {  // NUEVO
+                        componentConfig.put("textSize", view.textSize)
+                        componentConfig.put("letterSpacing", view.letterSpacing)
                     }
                 }
 
@@ -897,14 +1083,27 @@ class EditModeManager(
 
                         when (view) {
                             is TextView -> {
-                                view.textSize = it.optDouble("textSize", 16.0).toFloat()
+                                // IMPORTANTE: textSize en el JSON está en px, convertir a sp
+                                val textSizeInPx = it.optDouble("textSize", 32.0).toFloat()
+                                val textSizeInSp = textSizeInPx / context.resources.displayMetrics.scaledDensity
+                                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeInSp)
                                 view.letterSpacing = it.optDouble("letterSpacing", 0.0).toFloat()
                             }
                             is TextInputLayout -> {
                                 view.editText?.let { editText ->
-                                    editText.textSize = it.optDouble("textSize", 16.0).toFloat()
+                                    // IMPORTANTE: textSize en el JSON está en px, convertir a sp
+                                    val textSizeInPx = it.optDouble("textSize", 32.0).toFloat()
+                                    val textSizeInSp = textSizeInPx / context.resources.displayMetrics.scaledDensity
+                                    editText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeInSp)
                                     editText.letterSpacing = it.optDouble("letterSpacing", 0.0).toFloat()
                                 }
+                            }
+                            is MaterialButton -> {  // NUEVO
+                                // IMPORTANTE: textSize en el JSON está en px, convertir a sp
+                                val textSizeInPx = it.optDouble("textSize", 32.0).toFloat()
+                                val textSizeInSp = textSizeInPx / context.resources.displayMetrics.scaledDensity
+                                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeInSp)
+                                view.letterSpacing = it.optDouble("letterSpacing", 0.0).toFloat()
                             }
                         }
 
@@ -920,9 +1119,27 @@ class EditModeManager(
     }
 
     private fun loadCurrentConfiguration() {
+        Log.d(TAG, "Cargando configuración para servicio tipo: $currentServiceType")
+        val viewsWithConfig = mutableListOf<String>()
+        val viewsWithoutConfig = mutableListOf<String>()
+        
         getAllEditableViews().forEach { view ->
+            val componentKey = getComponentKey(view)
+            val scaleKey = getServiceComponentKey(COMPONENT_SCALE_KEY, componentKey)
+            val hasConfig = preferencesManager.contains(scaleKey)
+            
+            if (hasConfig) {
+                viewsWithConfig.add(getComponentName(view))
+            } else {
+                viewsWithoutConfig.add(getComponentName(view))
+            }
+            
             loadComponentConfiguration(view)
         }
+        
+        Log.d(TAG, "Configuración encontrada para: $viewsWithConfig")
+        Log.d(TAG, "Sin configuración (usando defaults): $viewsWithoutConfig")
+        Log.d(TAG, "Configuración cargada completamente para servicio $currentServiceType")
     }
 
     fun setCurrentServiceType(serviceType: Int) {
@@ -976,8 +1193,41 @@ class EditModeManager(
     private fun disableInteractiveComponents() {
         Log.d("EditModeManager", "Deshabilitando componentes interactivos")
         
-        // Disable buttons
-        // Button disable code removed - buttons no longer exist
+        // Disable action buttons that should not work in edit mode
+        activity.findViewById<MaterialButton>(R.id.executeUSSDButton)?.let { button ->
+            button.isEnabled = false
+            button.alpha = 0.5f
+            Log.d("EditModeManager", "executeUSSDButton deshabilitado")
+        }
+        
+        activity.findViewById<MaterialButton>(R.id.manualReferenceButton)?.let { button ->
+            button.isEnabled = false
+            button.alpha = 0.5f
+            Log.d("EditModeManager", "manualReferenceButton deshabilitado")
+        }
+        
+        // Disable text inputs interaction during edit mode
+        activity.findViewById<TextInputEditText>(R.id.phoneInput)?.let { input ->
+            input.isFocusable = false
+            input.isFocusableInTouchMode = false
+        }
+        activity.findViewById<TextInputEditText>(R.id.cedulaInput)?.let { input ->
+            input.isFocusable = false
+            input.isFocusableInTouchMode = false
+        }
+        activity.findViewById<TextInputEditText>(R.id.amountInput)?.let { input ->
+            input.isFocusable = false
+            input.isFocusableInTouchMode = false
+        }
+        activity.findViewById<TextInputEditText>(R.id.dateInput)?.let { input ->
+            input.isFocusable = false
+            input.isFocusableInTouchMode = false
+        }
+    }
+    
+    
+    private fun enableEditMode() {
+        isEditModeEnabled = true
         
         // Disable text inputs (make them non-focusable but keep touchable for editing)
         activity.findViewById<TextInputEditText>(R.id.phoneInput)?.let { input ->
@@ -1001,8 +1251,18 @@ class EditModeManager(
     private fun enableInteractiveComponents() {
         Log.d("EditModeManager", "Habilitando componentes interactivos")
         
-        // Re-enable buttons
-        // Button enable code removed - buttons no longer exist
+        // Re-enable action buttons
+        activity.findViewById<MaterialButton>(R.id.executeUSSDButton)?.let { button ->
+            button.isEnabled = true
+            button.alpha = 1.0f
+            Log.d("EditModeManager", "executeUSSDButton habilitado")
+        }
+        
+        activity.findViewById<MaterialButton>(R.id.manualReferenceButton)?.let { button ->
+            button.isEnabled = true
+            button.alpha = 1.0f
+            Log.d("EditModeManager", "manualReferenceButton habilitado")
+        }
         
         // Re-enable text inputs
         activity.findViewById<TextInputEditText>(R.id.phoneInput)?.let { input ->
@@ -1122,6 +1382,24 @@ class EditModeManager(
         getAllEditableViews().forEach { view ->
             if (view is TextInputLayout) {
                 view.editText?.letterSpacing = letterSpacing
+                Log.d("EditModeManager", "Aplicando letterSpacing grupal: $letterSpacing a ${getComponentName(view)}")
+            }
+        }
+    }
+    
+    private fun applyTextSizeToAllButtons(textSize: Float) {
+        getAllEditableViews().forEach { view ->
+            if (view is MaterialButton) {
+                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSize)
+                Log.d("EditModeManager", "Aplicando textSize grupal: ${textSize}sp a ${getComponentName(view)}")
+            }
+        }
+    }
+
+    private fun applyLetterSpacingToAllButtons(letterSpacing: Float) {
+        getAllEditableViews().forEach { view ->
+            if (view is MaterialButton) {
+                view.letterSpacing = letterSpacing
                 Log.d("EditModeManager", "Aplicando letterSpacing grupal: $letterSpacing a ${getComponentName(view)}")
             }
         }

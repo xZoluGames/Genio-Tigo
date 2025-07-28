@@ -35,11 +35,10 @@
 
             <ImageView
                     android:id="@+id/serviceIcon"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:layout_gravity="center"
-                    android:src="@drawable/ic_money"
-                    app:tint="@color/white" />
+                    android:src="@drawable/tigo" />
 
         </FrameLayout>
 

@@ -10,22 +10,66 @@ import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Telephony
 import android.telecom.TelecomManager
 import androidx.core.content.ContextCompat
+import com.example.geniotecni.tigo.data.repository.ServiceRepository
 import com.example.geniotecni.tigo.models.ReferenceData
 import com.example.geniotecni.tigo.utils.AppLogger
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+/**
+ * 📱 INTEGRACIÓN USSD/SMS - Helper Complejo para Transacciones Automáticas
+ * 
+ * FUNCIONALIDAD PRINCIPAL:
+ * - Generación automática de códigos USSD específicos por servicio
+ * - Ejecución controlada de llamadas telefónicas con códigos USSD
+ * - Observación en tiempo real de SMS de respuesta del sistema
+ * - Extracción inteligente y automática de referencias de transacciones
+ * - Gestión completa del flujo asíncrono USSD → SMS → Callback
+ * 
+ * FLUJO ASÍNCRONO COMPLETO:
+ * 1. generateUSSDCode() → Genera código USSD según configuración de servicio
+ * 2. executeUSSD() → Inicia llamada telefónica y configura observación SMS
+ * 3. ContentObserver → Monitorea automáticamente SMS entrantes del sistema
+ * 4. extractReferenceData() → Parsea y extrae referencias usando regex inteligente
+ * 5. USSDCallback → Notifica resultado de forma asíncrona al caller
+ * 
+ * ARQUITECTURA ASÍNCRONA AVANZADA:
+ * - Kotlin Coroutines para operaciones no bloqueantes y manejo de concurrencia
+ * - ContentObserver para monitoreo SMS en tiempo real sin polling
+ * - Timeout automático inteligente para evitar búsquedas infinitas
+ * - Interface de callbacks para comunicación limpia con componentes UI
+ * - Manejo robusto de errores y estados de la aplicación
+ * 
+ * DEPENDENCIAS CRÍTICAS DEL SISTEMA:
+ * - ServiceRepository: Configuraciones centralizadas y generación USSD
+ * - TelecomManager: Ejecución de llamadas con SIM específico seleccionado
+ * - Telephony.Sms: Acceso privilegiado a SMS del sistema Android
+ * - ContentResolver: Observación de cambios en base de datos SMS
+ * - USADO POR: MainActivity para todos los flujos de transacciones USSD
+ * 
+ * OPTIMIZACIONES Y SEGURIDAD:
+ * - Validación de permisos antes de operaciones críticas
+ * - Limpieza automática de recursos al destruir componente
+ * - Regex optimizados para extracción rápida de referencias
+ * - Manejo thread-safe de callbacks y estado interno
+ */
 class USSDIntegrationHelper(private val context: Context) {
     
     companion object {
         private const val TAG = "USSDIntegrationHelper"
         private const val SMS_SEARCH_TIMEOUT = 300000L // 5 minutes
     }
+    
+    // Use new architecture components
+    private val serviceRepository = ServiceRepository.getInstance()
     
     private var smsObserver: ContentObserver? = null
     private var searchJob: Job? = null
@@ -271,44 +315,95 @@ class USSDIntegrationHelper(private val context: Context) {
         currentCallback = null
     }
     
-    // USSD code generators for different services
+    /**
+     * Generate USSD code using centralized service configuration
+     * This replaces all the individual generateUSSDForXXX methods
+     */
+    fun generateUSSDCode(serviceId: Int, params: Map<String, String>): String? {
+        return serviceRepository.generateUSSDCode(serviceId, params)
+    }
+    
+    /**
+     * Generate USSD code by service name (for backward compatibility)
+     */
+    fun generateUSSDByServiceName(serviceName: String, params: Map<String, String>): String? {
+        val serviceId = serviceRepository.findServiceIdByName(serviceName)
+        return if (serviceId >= 0) {
+            generateUSSDCode(serviceId, params)
+        } else {
+            AppLogger.w(TAG, "Service not found: $serviceName")
+            null
+        }
+    }
+    
+    // Legacy methods - DEPRECATED but kept for backward compatibility
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(0, mapOf(\"phone\" to phone, \"cedula\" to cedula, \"amount\" to amount))"))
     fun generateUSSDForTigoGiros(phone: String, cedula: String, amount: String): String {
-        return "*555*1*$phone*$cedula*1*$amount#"
+        return generateUSSDCode(0, mapOf("phone" to phone, "cedula" to cedula, "amount" to amount)) ?: "*555*1*$phone*$cedula*1*$amount#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(1, mapOf(\"phone\" to phone, \"cedula\" to cedula, \"amount\" to amount))"))
     fun generateUSSDForTigoRetiros(phone: String, cedula: String, amount: String): String {
-        return "*555*2*$phone*$cedula*1*$amount#"
+        return generateUSSDCode(1, mapOf("phone" to phone, "cedula" to cedula, "amount" to amount)) ?: "*555*2*$phone*$cedula*1*$amount#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(2, mapOf(\"phone\" to phone, \"cedula\" to cedula, \"amount\" to amount))"))
     fun generateUSSDForTigoBilletera(phone: String, cedula: String, amount: String): String {
-        return "*555*3*1*$cedula*1*$phone*$amount#"
+        return generateUSSDCode(2, mapOf("phone" to phone, "cedula" to cedula, "amount" to amount)) ?: "*555*3*1*$cedula*1*$phone*$amount#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(3, mapOf(\"phone\" to phone))"))
     fun generateUSSDForTigoTelefonia(phone: String): String {
-        return "*555*5*1*1*1*$phone*$phone#"
+        return generateUSSDCode(3, mapOf("phone" to phone)) ?: "*555*5*1*1*1*$phone*$phone#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(75, mapOf(\"phone\" to phone, \"cedula\" to cedula, \"nacimiento\" to birthDate))"))
     fun generateUSSDForReseteoCliente(phone: String, cedula: String, birthDate: String): String {
-        return "*555*6*3*$phone*1*$cedula*$birthDate#"
+        return generateUSSDCode(75, mapOf("phone" to phone, "cedula" to cedula, "nacimiento" to birthDate)) ?: "*555*6*3*$phone*1*$cedula*$birthDate#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(7, mapOf(\"cedula\" to nis))"))
     fun generateUSSDForANDE(nis: String): String {
-        return "*222*1*2*$nis#"
+        return generateUSSDCode(7, mapOf("cedula" to nis)) ?: "*222*1*2*$nis#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(8, mapOf(\"cedula\" to issan))"))
     fun generateUSSDForESSAP(issan: String): String {
-        return "*222*2*1*$issan#"
+        return generateUSSDCode(8, mapOf("cedula" to issan)) ?: "*222*2*1*$issan#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(9, mapOf(\"phone\" to account))"))
     fun generateUSSDForCOPACO(account: String): String {
-        return "*222*3*1*$account#"
+        return generateUSSDCode(9, mapOf("phone" to account)) ?: "*222*3*1*$account#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(11, mapOf(\"phone\" to phone, \"amount\" to amount))"))
     fun generateUSSDForPersonalRetiros(phone: String, amount: String): String {
-        return "*200*2*$phone*$amount#"
+        return generateUSSDCode(11, mapOf("phone" to phone, "amount" to amount)) ?: "*200*2*$phone*$amount#"
     }
     
+    @Deprecated("Use generateUSSDCode with serviceId instead", ReplaceWith("generateUSSDCode(12, mapOf(\"phone\" to phone, \"amount\" to amount))"))
     fun generateUSSDForPersonalTelefonia(phone: String, amount: String): String {
-        return "*200*4*$phone*$amount#"
+        return generateUSSDCode(12, mapOf("phone" to phone, "amount" to amount)) ?: "*200*4*$phone*$amount#"
     }
+
+    /**
+     * Check if service has USSD support
+     */
+    fun hasUSSDSupport(serviceId: Int): Boolean {
+        return serviceRepository.hasUSSDSupport(serviceId)
+    }
+    
+    /**
+     * Check if service has USSD support by name
+     */
+    fun hasUSSDSupportByName(serviceName: String): Boolean {
+        val serviceId = serviceRepository.findServiceIdByName(serviceName)
+        return if (serviceId >= 0) hasUSSDSupport(serviceId) else false
+    }
+    
+    /**
+     * Get service configuration for USSD operations
+     */
+    fun getServiceConfig(serviceId: Int) = serviceRepository.getServiceConfig(serviceId)
 }

@@ -32,11 +32,10 @@
 
             <ImageView
                     android:id="@+id/serviceIcon"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:layout_gravity="center"
-                    android:src="@drawable/ic_money"
-                    app:tint="@color/white" />
+                    android:src="@drawable/tigo" />
 
         </FrameLayout>
 
@@ -131,12 +130,164 @@
 
             </LinearLayout>
 
-            <!-- Reference Row -->
+            <!-- Phone Row -->
             <LinearLayout
+                    android:id="@+id/phoneRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="4dp">
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone">
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Teléfono:"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant" />
+
+                <TextView
+                        android:id="@+id/textViewPhone"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text=""
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurface"
+                        android:gravity="end"
+                        android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+            <!-- Cedula Row -->
+            <LinearLayout
+                    android:id="@+id/cedulaRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone">
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cédula:"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant" />
+
+                <TextView
+                        android:id="@+id/textViewCedula"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text=""
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurface"
+                        android:gravity="end"
+                        android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+            <!-- Monto Row (Updated) -->
+            <LinearLayout
+                    android:id="@+id/montoRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone">
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Monto:"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant" />
+
+                <TextView
+                        android:id="@+id/textViewMonto"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text=""
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurface"
+                        android:textStyle="bold"
+                        android:gravity="end" />
+
+            </LinearLayout>
+
+            <!-- Reference 1 Row -->
+            <LinearLayout
+                    android:id="@+id/reference1Row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone">
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Referencia 1:"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant" />
+
+                <TextView
+                        android:id="@+id/textViewReference1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text=""
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/status_info"
+                        android:gravity="end"
+                        android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+            <!-- Reference 2 Row -->
+            <LinearLayout
+                    android:id="@+id/reference2Row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone">
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Referencia 2:"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/md_theme_light_onSurfaceVariant" />
+
+                <TextView
+                        android:id="@+id/textViewReference2"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text=""
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/status_info"
+                        android:gravity="end"
+                        android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+            <!-- Legacy Reference Row (kept for backward compatibility) -->
+            <LinearLayout
+                    android:id="@+id/legacyReferenceRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone">
 
                 <TextView
                         android:layout_width="wrap_content"

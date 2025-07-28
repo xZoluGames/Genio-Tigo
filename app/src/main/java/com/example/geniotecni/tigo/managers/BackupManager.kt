@@ -1,8 +1,6 @@
-package com.example.geniotecni.tigo
+package com.example.geniotecni.tigo.managers
 
 import android.content.Context
-import com.example.geniotecni.tigo.managers.PreferencesManager
-import com.example.geniotecni.tigo.managers.PrintDataManager
 import com.google.gson.Gson
 import java.io.File
 import java.text.SimpleDateFormat

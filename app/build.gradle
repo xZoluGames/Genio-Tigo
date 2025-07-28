@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'app.cash.paparazzi'
+apply plugin: 'dagger.hilt.android.plugin'
 
 android {
     compileSdkVersion 35
@@ -13,7 +16,8 @@ android {
     }
     buildFeatures {
         dataBinding true
-        viewBinding false
+        viewBinding true
+        buildConfig true
     }
     buildTypes {
         release {
@@ -29,7 +33,12 @@ android {
         jvmTarget = '1.8'
     }
     
-    // kapt configuration temporarily disabled
+    // Enable Room schema export for versioning
+    kapt {
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
+    }
     namespace 'com.example.geniotecni.tigo'
 }
 
@@ -66,9 +75,10 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.9.2'
 
-    // Room database - temporarily disabled for compilation
-    // implementation "androidx.room:room-runtime:2.5.2"
-    // implementation "androidx.room:room-ktx:2.5.2"
+    // Room database - Using kapt with compatible version
+    implementation "androidx.room:room-runtime:2.4.3"
+    implementation "androidx.room:room-ktx:2.4.3"
+    kapt "androidx.room:room-compiler:2.4.3"
     
     // Gson for JSON serialization
     implementation 'com.google.code.gson:gson:2.10.1'
@@ -81,5 +91,24 @@ dependencies {
 
     // Glide for image loading
     implementation 'com.github.bumptech.glide:glide:4.16.0'
+    
+    // Hilt Dependency Injection
+    implementation "com.google.dagger:hilt-android:2.48"
+    kapt "com.google.dagger:hilt-compiler:2.48"
+    
+    // Paging3 for efficient data loading - Disabled for build success  
+    // implementation "androidx.paging:paging-runtime-ktx:3.1.1"
+    
+    // Testing dependencies
+    testImplementation 'org.mockito:mockito-core:5.1.1'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:4.1.0'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1'
+    testImplementation "androidx.room:room-testing:2.5.2"
+    
+    // Hilt testing
+    testImplementation "com.google.dagger:hilt-android-testing:2.48"
+    kaptTest "com.google.dagger:hilt-compiler:2.48"
+    androidTestImplementation "com.google.dagger:hilt-android-testing:2.48"
+    kaptAndroidTest "com.google.dagger:hilt-compiler:2.48"
     
 }

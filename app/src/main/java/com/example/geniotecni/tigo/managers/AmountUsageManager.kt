@@ -1,22 +1,57 @@
 package com.example.geniotecni.tigo.managers
 
 import android.content.Context
-import android.content.SharedPreferences
+import com.example.geniotecni.tigo.utils.BaseManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.*
 
-class AmountUsageManager(private val context: Context) {
+/**
+ * 💰 GESTOR DE USO DE MONTOS - Sistema Inteligente de Sugerencias
+ * 
+ * PROPÓSITO PRINCIPAL:
+ * - Tracking inteligente de montos más utilizados por el usuario
+ * - Generación automática de sugerencias de montos frecuentes
+ * - Optimización de UX mediante chips de acceso rápido
+ * - Analytics de patrones de uso para mejora continua
+ * 
+ * FUNCIONALIDADES AVANZADAS:
+ * - Registro asíncrono de uso de montos con timestamps
+ * - Algoritmo de ranking por frecuencia y recencia
+ * - Limpieza automática de datos antiguos (>90 días)
+ * - Estadísticas detalladas de comportamiento de usuario
+ * - Limitación inteligente a los montos más relevantes
+ * 
+ * ARQUITECTURA ASÍNCRONA:
+ * - Operaciones I/O en Dispatchers.IO para rendimiento
+ * - Persistencia en JSON con manejo robusto de errores
+ * - Herencia de BaseManager para SharedPreferences optimizado
+ * - Coroutines para operaciones no bloqueantes
+ * 
+ * ALGORITMO DE SUGERENCIAS:
+ * - Prioriza montos con 2+ usos para evitar sugerencias únicas
+ * - Combina frecuencia de uso con recencia temporal
+ * - Mantiene máximo 20 montos para rendimiento óptimo
+ * - Ordenamiento dual: usageCount DESC, lastUsed DESC
+ * 
+ * CASOS DE USO PRINCIPALES:
+ * - MainActivity: Chips de montos frecuentes para entrada rápida
+ * - Analytics: Comprensión de patrones de transacciones
+ * - UX Optimization: Reducción de tiempo de entrada de datos
+ * 
+ * CONEXIONES ARQUITECTÓNICAS:
+ * - HEREDA DE: BaseManager para persistencia optimizada
+ * - USADO POR: MainActivity para chips de montos rápidos
+ * - UTILIZA: Kotlin Coroutines para operaciones asíncronas
+ * - PERSISTE EN: SharedPreferences con formato JSON estructurado
+ */
+class AmountUsageManager(context: Context) : BaseManager(context, "AmountUsageManager") {
 
     companion object {
-        private const val PREFS_NAME = "amount_usage_prefs"
         private const val KEY_AMOUNT_USAGE = "amount_usage_data"
         private const val MAX_TRACKED_AMOUNTS = 20
     }
-
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     data class AmountUsageData(
         val amount: Long,
@@ -114,7 +149,8 @@ class AmountUsageManager(private val context: Context) {
      * Carga los datos de uso desde SharedPreferences
      */
     private fun loadUsageData(): Map<Long, AmountUsageData> {
-        val jsonString = prefs.getString(KEY_AMOUNT_USAGE, null) ?: return emptyMap()
+        val jsonString = getString(KEY_AMOUNT_USAGE)
+        if (jsonString.isEmpty()) return emptyMap()
 
         return try {
             val jsonArray = JSONArray(jsonString)
@@ -159,7 +195,7 @@ class AmountUsageManager(private val context: Context) {
             jsonArray.put(jsonObject)
         }
 
-        prefs.edit().putString(KEY_AMOUNT_USAGE, jsonArray.toString()).apply()
+        savePreference(KEY_AMOUNT_USAGE, jsonArray.toString())
     }
 
     /**

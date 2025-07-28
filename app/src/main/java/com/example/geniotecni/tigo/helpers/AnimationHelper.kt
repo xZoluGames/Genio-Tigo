@@ -1,15 +1,62 @@
 package com.example.geniotecni.tigo.helpers
 
-import android.animation.*
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
+import android.os.Build
 import android.view.View
-import android.view.ViewGroup
-import android.view.animation.*
+import android.view.ViewAnimationUtils
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.AnimationUtils
+import android.view.animation.BounceInterpolator
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import androidx.core.view.ViewCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.RecyclerView
-import android.os.Build
-import android.view.ViewAnimationUtils
 
+/**
+ * 🎬 HELPER DE ANIMACIONES - Sistema Completo de Efectos Visuales
+ * 
+ * PROPÓSITO PRINCIPAL:
+ * - Proporciona biblioteca completa de animaciones predefinidas
+ * - Simplifica la implementación de efectos visuales complejos
+ * - Garantiza consistencia en animaciones a través de la aplicación
+ * - Optimiza rendimiento con interpoladores y duraciones estandarizadas
+ * 
+ * TIPOS DE ANIMACIONES DISPONIBLES:
+ * - Fade In/Out: Transiciones suaves de opacidad para mostrar/ocultar elementos
+ * - Scale In/Out: Efectos de zoom con overshoot para elementos destacados
+ * - Slide: Deslizamientos desde diferentes direcciones
+ * - Card Press: Efectos táctiles para interacciones de tarjetas
+ * - Ripple: Efectos de ondulación para feedback visual
+ * - Shake: Animaciones de error y advertencia
+ * - Bounce: Efectos de rebote para confirmaciones
+ * - Circular Reveal: Revelado circular moderno (API 21+)
+ * - Morph: Transiciones entre vistas diferentes
+ * 
+ * OPTIMIZACIONES DE RENDIMIENTO:
+ * - Interpoladores optimizados (FastOutSlowIn, Overshoot, etc.)
+ * - Duraciones estandarizadas (SHORT: 200ms, MEDIUM: 300ms, LONG: 500ms)
+ * - Compatibilidad con versiones Android antiguas
+ * - ViewPropertyAnimators para mejor rendimiento
+ * 
+ * CASOS DE USO PRINCIPALES:
+ * - Transiciones entre pantallas y estados
+ * - Feedback visual para interacciones de usuario
+ * - Animaciones de listas y RecyclerViews
+ * - Efectos de carga y procesamiento
+ * - Indicadores de errores y confirmaciones
+ * 
+ * CONEXIONES EN LA APLICACIÓN:
+ * - USADO POR: MainActivity para transiciones de servicios
+ * - USADO POR: Adapters para animaciones de elementos de lista
+ * - USADO POR: EditModeManager para efectos de edición
+ * - USADO POR: Activities para transiciones entre pantallas
+ */
 class AnimationHelper {
 
     companion object {
@@ -124,14 +171,12 @@ class AnimationHelper {
 
     // Ripple effect
     fun createRippleEffect(view: View, x: Float, y: Float) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            view.background?.let { background ->
-                background.setHotspot(x, y)
-                background.state = intArrayOf(
-                    android.R.attr.state_pressed,
-                    android.R.attr.state_enabled
-                )
-            }
+        view.background?.let { background ->
+            background.setHotspot(x, y)
+            background.state = intArrayOf(
+                android.R.attr.state_pressed,
+                android.R.attr.state_enabled
+            )
         }
     }
 
@@ -156,14 +201,10 @@ class AnimationHelper {
 
     // Circular reveal animation
     fun circularReveal(view: View, centerX: Int, centerY: Int, startRadius: Float, endRadius: Float) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val anim = ViewAnimationUtils.createCircularReveal(view, centerX, centerY, startRadius, endRadius)
-            anim.duration = DURATION_LONG
-            view.visibility = View.VISIBLE
-            anim.start()
-        } else {
-            fadeIn(view)
-        }
+        val anim = ViewAnimationUtils.createCircularReveal(view, centerX, centerY, startRadius, endRadius)
+        anim.duration = DURATION_LONG
+        view.visibility = View.VISIBLE
+        anim.start()
     }
 
     // Morph animation between views
