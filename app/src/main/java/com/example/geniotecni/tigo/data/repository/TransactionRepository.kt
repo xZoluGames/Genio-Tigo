@@ -312,7 +312,7 @@ class TransactionRepository(
         
         return TransactionEntity.create(
             serviceId = 1, // Default service ID
-            serviceName = printData.service,
+            serviceName = printData.serviceName,
             phone = printData.referenceData.ref1.takeIf { it.contains(Regex("\\d{10}")) } ?: "",
             cedula = printData.referenceData.ref2,
             amount = (amount / 100).toInt(), // Convert from cents

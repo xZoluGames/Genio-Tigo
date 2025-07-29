@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import com.example.geniotecni.tigo.data.repository.ServiceRepository
 import com.example.geniotecni.tigo.models.ReferenceData
 import com.example.geniotecni.tigo.utils.AppLogger
+import com.example.geniotecni.tigo.utils.USSDConfiguration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -85,8 +86,36 @@ class USSDIntegrationHelper(private val context: Context) {
     
     private var currentCallback: USSDCallback? = null
     
-    fun executeUSSD(ussdCode: String, searchType: String, callback: USSDCallback) {
-        AppLogger.i(TAG, "Ejecutando USSD: $ussdCode para $searchType")
+    /**
+     * FASE 8: Ejecuta USSD usando configuración dinámica
+     */
+    fun executeUSSDForService(
+        serviceId: Int, 
+        params: Map<String, String>, 
+        callback: USSDCallback
+    ) {
+        AppLogger.i(TAG, "Ejecutando USSD para servicio ID: $serviceId")
+        
+        // Generar código USSD usando USSDConfiguration
+        val ussdCode = USSDConfiguration.generateUSSDCode(serviceId, params)
+        if (ussdCode == null) {
+            callback.onError("Código USSD no encontrado para servicio $serviceId")
+            return
+        }
+        
+        // Obtener SIM requerida
+        val requiredSIM = USSDConfiguration.getRequiredSIM(serviceId)
+        val simIndex = requiredSIM?.index ?: 0
+        
+        // Obtener configuración del servicio para tipo de búsqueda SMS
+        val serviceConfig = serviceRepository.getServiceConfig(serviceId)
+        val searchType = serviceConfig?.smsSearchType ?: "Servicio"
+        
+        executeUSSD(ussdCode, searchType, callback, simIndex)
+    }
+    
+    fun executeUSSD(ussdCode: String, searchType: String, callback: USSDCallback, simSlot: Int = 0) {
+        AppLogger.i(TAG, "Ejecutando USSD: $ussdCode para $searchType en SIM $simSlot")
         currentCallback = callback
         currentSearchType = searchType
         
@@ -96,7 +125,7 @@ class USSDIntegrationHelper(private val context: Context) {
         }
         
         try {
-            makeCall(ussdCode)
+            makeCall(ussdCode, simSlot)
             startSMSSearch(searchType)
         } catch (e: Exception) {
             AppLogger.e(TAG, "Error ejecutando USSD", e)

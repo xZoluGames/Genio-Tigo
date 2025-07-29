@@ -102,23 +102,23 @@ class MainViewModel @Inject constructor(
         val errors = ValidationErrors()
 
         // Validación de teléfono
-        if (config.showPhone && phone.isBlank()) {
+        if (config?.showPhone == true && phone.isBlank()) {
             errors.phoneError = "Teléfono requerido"
-        } else if (config.showPhone && !transactionProcessor.isValidPhoneNumber(phone)) {
+        } else if (config?.showPhone == true && !transactionProcessor.isValidPhoneNumber(phone)) {
             errors.phoneError = "Formato de teléfono inválido"
         }
 
         // Validación de cédula
-        if (config.showCedula && cedula.isBlank()) {
+        if (config?.showCedula == true && cedula.isBlank()) {
             errors.cedulaError = "Cédula requerida"
-        } else if (config.showCedula && !transactionProcessor.isValidCedula(cedula)) {
+        } else if (config?.showCedula == true && !transactionProcessor.isValidCedula(cedula)) {
             errors.cedulaError = "Formato de cédula inválido"
         }
 
         // Validación de monto
-        if (config.showAmount && amount.isBlank()) {
+        if (config?.showAmount == true && amount.isBlank()) {
             errors.amountError = "Monto requerido"
-        } else if (config.showAmount) {
+        } else if (config?.showAmount == true) {
             val numericAmount = amount.replace(",", "").toLongOrNull()
             if (numericAmount == null || numericAmount <= 0) {
                 errors.amountError = "Monto debe ser mayor a 0"
@@ -126,7 +126,7 @@ class MainViewModel @Inject constructor(
         }
 
         // Validación de fecha de nacimiento
-        if (config.showNacimiento && date.isBlank()) {
+        if (config?.showNacimiento == true && date.isBlank()) {
             errors.dateError = "Fecha de nacimiento requerida"
         }
 
@@ -162,7 +162,7 @@ class MainViewModel @Inject constructor(
     }
 
     /**
-     * Procesa transacción USSD
+     * FASE 9: Procesa transacción USSD usando configuración dinámica
      */
     private fun processUSSDTransaction(
         service: ServiceItem,
@@ -171,30 +171,46 @@ class MainViewModel @Inject constructor(
         amount: String,
         date: String
     ) {
-        val params = mapOf(
-            "phone" to phone,
-            "cedula" to cedula,
-            "amount" to amount.replace(",", ""),
-            "nacimiento" to date
-        )
-
-        val ussdCode = serviceRepository.generateUSSDCode(service.id, params)
-        if (ussdCode != null) {
-            _ussdState.value = USSDState.Executing
-            ussdIntegrationHelper.executeUSSD(ussdCode, service.name, this)
+        // FASE 9: Obtener configuración del servicio para mapeo de campos
+        val serviceConfig = serviceRepository.getServiceConfig(service.id)
+        
+        // FASE 9: Crear parámetros usando mapeo de campos especiales
+        val params = buildMap {
+            if (phone.isNotBlank()) put("numero", phone)
+            if (phone.isNotBlank()) put("phone", phone)
             
-            // Registrar uso del monto
+            // Mapear campo cedula según configuración especial del servicio
+            if (cedula.isNotBlank()) {
+                val mappedField = serviceConfig?.specialFieldMappings?.get("cedula") ?: "cedula"
+                put(mappedField, cedula)
+                put("cedula", cedula) // Mantener compatibilidad
+            }
+            
             if (amount.isNotBlank()) {
-                viewModelScope.launch {
-                    val numericAmount = amount.replace(",", "").toLongOrNull()
-                    if (numericAmount != null && numericAmount > 0) {
-                        amountUsageManager.recordAmountUsage(numericAmount)
-                        loadAmountSuggestions() // Recargar sugerencias
-                    }
+                val cleanAmount = amount.replace(",", "")
+                put("monto", cleanAmount)
+                put("amount", cleanAmount)
+            }
+            
+            if (date.isNotBlank()) {
+                put("nacimiento", date)
+                put("date", date)
+            }
+        }
+
+        // FASE 9: Usar nuevo método executeUSSDForService
+        _ussdState.value = USSDState.Executing
+        ussdIntegrationHelper.executeUSSDForService(service.id, params, this)
+        
+        // Registrar uso del monto
+        if (amount.isNotBlank()) {
+            viewModelScope.launch {
+                val numericAmount = amount.replace(",", "").toLongOrNull()
+                if (numericAmount != null && numericAmount > 0) {
+                    amountUsageManager.recordAmountUsage(numericAmount)
+                    loadAmountSuggestions() // Recargar sugerencias
                 }
             }
-        } else {
-            _transactionState.value = TransactionState.Error("No se pudo generar código USSD")
         }
     }
 
@@ -240,7 +256,7 @@ class MainViewModel @Inject constructor(
     }
 
     /**
-     * Crea PrintData para persistencia
+     * FASE 9: Crea PrintData usando configuración dinámica
      */
     private fun createPrintData(
         service: ServiceItem,
@@ -248,11 +264,28 @@ class MainViewModel @Inject constructor(
         cedula: String,
         amount: String,
         date: String,
-        message: String
+        message: String,
+        referenceData: ReferenceData = ReferenceData("N/A", "N/A")
     ): PrintData {
-        val currentDate = java.util.Date()
-        val dateFormat = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-        val timeFormat = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
+        // FASE 9: Obtener configuración del servicio
+        val serviceConfig = serviceRepository.getServiceConfig(service.id)
+        
+        // FASE 9: Crear mapa de campos dinámicos
+        val fields = buildMap {
+            if (phone.isNotBlank()) {
+                put("numero", phone)
+                put("phone", phone)
+            }
+            if (cedula.isNotBlank()) {
+                // Mapear campo según configuración especial
+                val mappedField = serviceConfig?.specialFieldMappings?.get("cedula") ?: "cedula"
+                put(mappedField, cedula)
+                put("cedula", cedula)
+            }
+            if (date.isNotBlank()) {
+                put("nacimiento", date)
+            }
+        }
         
         val transactionData = TransactionData(
             phone = phone,
@@ -262,14 +295,27 @@ class MainViewModel @Inject constructor(
             additionalData = emptyMap()
         )
 
-        return PrintData(
-            service = service.name,
-            date = dateFormat.format(currentDate),
-            time = timeFormat.format(currentDate),
-            message = message,
-            referenceData = ReferenceData("N/A", "N/A"),
-            transactionData = transactionData
-        )
+        // FASE 9: Usar nuevo método fromTransaction para generar mensaje consistente
+        return if (serviceConfig != null) {
+            PrintData.fromTransaction(
+                serviceId = service.id,
+                serviceName = service.name,
+                fields = fields,
+                amount = amount.takeIf { it.isNotBlank() },
+                referenceData = referenceData,
+                serviceConfig = serviceConfig
+            ).copy(transactionData = transactionData)
+        } else {
+            // Fallback al constructor legado
+            PrintData(
+                service = service.name,
+                date = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault()).format(java.util.Date()),
+                time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date()),
+                message = message,
+                referenceData = referenceData,
+                transactionData = transactionData
+            )
+        }
     }
 
     /**

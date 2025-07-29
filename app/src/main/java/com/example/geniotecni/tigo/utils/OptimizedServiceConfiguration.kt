@@ -102,13 +102,23 @@ object OptimizedServiceConfiguration {
             Triple("Carga Billetera Tigo", "Recarga tu billetera digital", "tigo")
         )
         
-        return ConfigurationOptimizer.createServiceBatch(
-            baseId = 0,
-            services = tigoServices,
-            colorScheme = ConfigurationOptimizer.ColorScheme.TIGO,
-            pattern = ConfigurationOptimizer.ServicePattern.TIGO_MONEY_TRANSFER,
-            category = ServiceCategory.TIGO
-        ) { index -> ConfigurationOptimizer.USSDPatterns.tigoPattern(index.toString()) } +
+        // FASE 9: Usar USSDConfiguration para códigos USSD reales
+        return tigoServices.mapIndexed { index, (name, description, _) ->
+            index to ConfigurationOptimizer.buildService(
+                id = index,
+                name = name,
+                description = description,
+                iconKey = "tigo",
+                colorScheme = ConfigurationOptimizer.ColorScheme.TIGO,
+                pattern = ConfigurationOptimizer.ServicePattern.TIGO_MONEY_TRANSFER,
+                hasUSSD = true,
+                category = ServiceCategory.TIGO,
+                // FASE 9: Usar USSDConfiguration en lugar de generador local
+                ussdGenerator = { params -> 
+                    USSDConfiguration.generateUSSDCode(index, params) ?: ""
+                }
+            )
+        }.toMap() +
         
         mapOf(
             3 to ConfigurationOptimizer.buildService(
@@ -116,25 +126,29 @@ object OptimizedServiceConfiguration {
                 iconKey = "phone_mobile", colorScheme = ConfigurationOptimizer.ColorScheme.TIGO, 
                 pattern = ConfigurationOptimizer.ServicePattern.TIGO_PHONE_SERVICE, hasUSSD = true,
                 category = ServiceCategory.TIGO,
-                ussdGenerator = ConfigurationOptimizer.USSDPatterns.tigoPhonePattern("5")
+                // FASE 9: Usar USSDConfiguration
+                ussdGenerator = { params -> USSDConfiguration.generateUSSDCode(3, params) ?: "" }
             ),
             4 to ConfigurationOptimizer.buildService(
                 id = 4, name = "Pago TV e Internet Hogar", description = "Paga tus servicios del hogar",
                 iconKey = "home_services", colorScheme = ConfigurationOptimizer.ColorScheme.TIGO,
                 pattern = ConfigurationOptimizer.ServicePattern.TIGO_PHONE_SERVICE, hasUSSD = true,
-                category = ServiceCategory.TIGO
+                category = ServiceCategory.TIGO,
+                ussdGenerator = { params -> USSDConfiguration.generateUSSDCode(4, params) ?: "" }
             ),
             5 to ConfigurationOptimizer.buildService(
                 id = 5, name = "Antena (Wimax)", description = "Servicio de internet inalámbrico",
                 iconKey = "wifi", colorScheme = ConfigurationOptimizer.ColorScheme.TIGO,
                 pattern = ConfigurationOptimizer.ServicePattern.TIGO_PHONE_SERVICE, hasUSSD = true,
-                category = ServiceCategory.TIGO
+                category = ServiceCategory.TIGO,
+                ussdGenerator = { params -> USSDConfiguration.generateUSSDCode(5, params) ?: "" }
             ),
             6 to ConfigurationOptimizer.buildService(
                 id = 6, name = "Tigo TV anticipado", description = "Prepago de televisión digital",
                 iconKey = "tv", colorScheme = ConfigurationOptimizer.ColorScheme.TIGO,
                 pattern = ConfigurationOptimizer.ServicePattern.TIGO_PHONE_SERVICE, hasUSSD = true,
-                category = ServiceCategory.TIGO
+                category = ServiceCategory.TIGO,
+                ussdGenerator = { params -> USSDConfiguration.generateUSSDCode(6, params) ?: "" }
             )
         )
     }
@@ -149,7 +163,8 @@ object OptimizedServiceConfiguration {
                 iconKey = "ande", colorScheme = ConfigurationOptimizer.ColorScheme.GOVERNMENT,
                 pattern = ConfigurationOptimizer.ServicePattern.GOVERNMENT_SERVICE, hasUSSD = true,
                 category = ServiceCategory.GOVERNMENT,
-                ussdGenerator = ConfigurationOptimizer.USSDPatterns.governmentPattern("1", "2"),
+                // FASE 9: Usar USSDConfiguration
+                ussdGenerator = { params -> USSDConfiguration.generateUSSDCode(7, params) ?: "" },
                 printLabels = ConfigurationOptimizer.generatePrintLabels("ANDE")
             ),
             8 to ConfigurationOptimizer.buildService(
@@ -157,14 +172,17 @@ object OptimizedServiceConfiguration {
                 iconKey = "essap", colorScheme = ConfigurationOptimizer.ColorScheme.GOVERNMENT_BLUE,
                 pattern = ConfigurationOptimizer.ServicePattern.GOVERNMENT_SERVICE, hasUSSD = true,
                 category = ServiceCategory.GOVERNMENT,
-                ussdGenerator = ConfigurationOptimizer.USSDPatterns.governmentPattern("2", "1"),
+                // FASE 9: Usar USSDConfiguration
+                ussdGenerator = { params -> USSDConfiguration.generateUSSDCode(8, params) ?: "" },
                 printLabels = ConfigurationOptimizer.generatePrintLabels("ESSAP")
             ),
             9 to ConfigurationOptimizer.buildService(
                 id = 9, name = "COPACO", description = "Telefonía fija nacional",
                 iconKey = "copaco", colorScheme = ConfigurationOptimizer.ColorScheme.GOVERNMENT_GREEN,
-                pattern = ConfigurationOptimizer.ServicePattern.GOVERNMENT_SERVICE, hasUSSD = false,
+                pattern = ConfigurationOptimizer.ServicePattern.GOVERNMENT_SERVICE, hasUSSD = true,
                 category = ServiceCategory.GOVERNMENT,
+                // FASE 9: Usar USSDConfiguration
+                ussdGenerator = { params -> USSDConfiguration.generateUSSDCode(9, params) ?: "" },
                 printLabels = ConfigurationOptimizer.generatePrintLabels("COPACO")
             )
         )

@@ -684,11 +684,11 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         dateInputLayout.visibility = if (config.showNacimiento) View.VISIBLE else View.GONE
 
 
-        // Update hints
-        phoneInputLayout.hint = config.phoneHint
-        cedulaInputLayout.hint = config.cedulaHint
-        amountInputLayout.hint = config.amountHint
-        dateInputLayout.hint = config.nacimientoHint
+        // FASE 9: Update hints específicos según el servicio
+        updateFieldHints(config)
+        
+        // FASE 9: Configurar tipos de entrada y valores por defecto
+        updateFieldInputTypes(config)
 
         // Update edit mode manager with current service and load its configuration
         editModeManager.setCurrentServiceType(serviceType)
@@ -703,6 +703,70 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         
         // Update chips with latest usage data
         setupQuickAmountChips()
+    }
+    
+    /**
+     * FASE 9: Actualiza hints específicos según el servicio
+     */
+    private fun updateFieldHints(config: ServiceConfig) {
+        phoneInputLayout.hint = config.phoneHint
+        amountInputLayout.hint = config.amountHint
+        dateInputLayout.hint = config.nacimientoHint
+        
+        // FASE 9: Hints específicos según servicio crítico
+        when (currentServiceType) {
+            8 -> { // ESSAP
+                cedulaInputLayout.hint = "Ingrese el nro de issan"
+            }
+            7 -> { // ANDE  
+                cedulaInputLayout.hint = "Ingrese el nro de NIS"
+            }
+            9 -> { // COPACO
+                cedulaInputLayout.hint = "Ingrese el Telefono o Cuenta"
+            }
+            75 -> { // Reseteo PIN
+                dateInputLayout.hint = "Ingrese fecha de nacimiento"
+            }
+            in 34..74 -> { // Servicios con tarjetas
+                val cardLabel = getCardServiceHint(currentServiceType)
+                cedulaInputLayout.hint = cardLabel
+            }
+            else -> {
+                cedulaInputLayout.hint = config.cedulaHint
+            }
+        }
+    }
+    
+    /**
+     * FASE 9: Configura tipos de entrada y valores por defecto
+     */
+    private fun updateFieldInputTypes(config: ServiceConfig) {
+        // Configurar valores por defecto
+        when (currentServiceType) {
+            8 -> { // ESSAP
+                cedulaInput.setText("ZV")
+                cedulaInput.setSelection(2) // Posicionar cursor después de "ZV"
+            }
+            else -> {
+                if (config.cedulaDefaultValue.isNotEmpty()) {
+                    cedulaInput.setText(config.cedulaDefaultValue)
+                }
+            }
+        }
+    }
+    
+    /**
+     * FASE 9: Obtiene hint específico para servicios con tarjetas
+     */
+    private fun getCardServiceHint(serviceId: Int): String {
+        return when (serviceId) {
+            34, 49, 43, 71, 65 -> "Primeros 8 digitos" // Mastercard
+            37, 54, 58, 69 -> "Primeros 8 digitos"     // Visa  
+            35, 38, 42, 57, 67, 73 -> "Primeros 10 digitos" // Cabal
+            55, 66, 72 -> "Primeros 8 digitos"         // Credicard
+            36, 53 -> "Ingrese el Nro de Tarjeta"      // Otros
+            else -> "Ingrese el Nro de CI"
+        }
     }
 
     private fun clearAllInputs() {
@@ -1241,7 +1305,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
                         showSnackbar(event.message)
                     }
                     is MainViewModel.UIEvent.TransactionCompleted -> {
-                        AppLogger.i(TAG, "Transacción completada para: ${event.printData.service}")
+                        AppLogger.i(TAG, "Transacción completada para: ${event.printData.serviceName}")
                     }
                     is MainViewModel.UIEvent.ReferencesUpdated -> {
                         AppLogger.i(TAG, "Referencias actualizadas: ${event.referenceData}")

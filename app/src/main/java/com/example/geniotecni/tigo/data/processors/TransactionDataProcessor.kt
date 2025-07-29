@@ -67,12 +67,13 @@ class TransactionDataProcessor {
     )
     
     /**
-     * Process transaction data for display
+     * FASE 9: Process transaction data for display - usar rawMessage
      */
     fun processTransactionData(printData: PrintData): ProcessedTransactionData {
         val transactionData = printData.transactionData
-        val service = printData.service
-        val message = printData.message
+        val service = printData.serviceName
+        // FASE 9: Usar rawMessage para procesamiento consistente
+        val message = printData.rawMessage
         
         AppLogger.d(TAG, "Processing transaction data for service: $service")
         

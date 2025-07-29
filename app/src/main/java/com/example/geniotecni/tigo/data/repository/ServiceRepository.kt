@@ -110,9 +110,9 @@ class ServiceRepository private constructor() {
     }
     
     /**
-     * Get service configuration
+     * Get service configuration (legacy method)
      */
-    fun getServiceConfig(serviceId: Int): ServiceConfig {
+    fun getServiceConfiguration(serviceId: Int): ServiceConfig {
         return OptimizedServiceConfiguration.getServiceConfig(serviceId)
     }
     
@@ -152,10 +152,11 @@ class ServiceRepository private constructor() {
     }
     
     /**
-     * Generate USSD code for service
+     * FASE 9: Generate USSD code for service using centralized configuration
      */
     fun generateUSSDCode(serviceId: Int, params: Map<String, String>): String? {
-        return OptimizedServiceConfiguration.generateUSSDCode(serviceId, params)
+        // FASE 9: Usar USSDConfiguration para generar códigos USSD
+        return com.example.geniotecni.tigo.utils.USSDConfiguration.generateUSSDCode(serviceId, params)
     }
     
     /**
@@ -193,6 +194,20 @@ class ServiceRepository private constructor() {
      */
     fun getPrintLabelByServiceName(serviceName: String, fieldName: String): String {
         return OptimizedServiceConfiguration.getPrintLabelByServiceName(serviceName, fieldName)
+    }
+    
+    /**
+     * FASE 9: Get service configuration (ServiceConfig) by ID
+     */
+    fun getServiceConfig(serviceId: Int): ServiceConfig? {
+        return OptimizedServiceConfiguration.getServiceConfiguration(serviceId)?.config
+    }
+    
+    /**
+     * FASE 9: Check if service requires alternative SIM (Personal uses SIM 2)
+     */
+    fun requiresAlternativeSIM(serviceId: Int): Boolean {
+        return com.example.geniotecni.tigo.utils.USSDConfiguration.getRequiredSIM(serviceId)?.index == 1
     }
     
     /**

@@ -227,7 +227,7 @@ class PrintHistoryActivity : AppCompatActivity() {
     
     private fun searchInPrintData(printData: PrintData, query: String): Boolean {
         // Search in basic fields
-        if (printData.service.lowercase().contains(query) ||
+        if (printData.serviceName.lowercase().contains(query) ||
             printData.date.contains(query) ||
             printData.time.contains(query) ||
             printData.message.lowercase().contains(query)) {
@@ -495,7 +495,7 @@ class PrintHistoryActivity : AppCompatActivity() {
         // Remove from list and update adapter
         val newList = printHistory.toMutableList()
         newList.removeIf {
-            it.service == printData.service &&
+            it.serviceName == printData.serviceName &&
                     it.date == printData.date &&
                     it.time == printData.time
         }

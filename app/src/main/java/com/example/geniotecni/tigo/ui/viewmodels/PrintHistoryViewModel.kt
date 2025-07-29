@@ -222,7 +222,7 @@ class PrintHistoryViewModel @Inject constructor(
      */
     private fun searchInPrintData(printData: PrintData, query: String): Boolean {
         // Búsqueda en campos básicos
-        if (printData.service.lowercase().contains(query) ||
+        if (printData.serviceName.lowercase().contains(query) ||
             printData.date.contains(query) ||
             printData.time.contains(query) ||
             printData.message.lowercase().contains(query)) {
@@ -356,7 +356,7 @@ class PrintHistoryViewModel @Inject constructor(
                 // Remover de la lista actual (simulación - PrintDataManager necesitaría método delete)
                 val currentHistory = _printHistory.value.toMutableList()
                 currentHistory.removeIf {
-                    it.service == printData.service &&
+                    it.serviceName == printData.serviceName &&
                     it.date == printData.date &&
                     it.time == printData.time
                 }
@@ -364,7 +364,7 @@ class PrintHistoryViewModel @Inject constructor(
                 _printHistory.value = currentHistory
                 applyCurrentFilters()
                 
-                _uiEvents.emit(UIEvent.TransactionDeleted(printData.service))
+                _uiEvents.emit(UIEvent.TransactionDeleted(printData.serviceName))
             } catch (e: Exception) {
                 _uiEvents.emit(UIEvent.ShowError("Error eliminando transacción"))
             }
@@ -508,7 +508,7 @@ class PrintHistoryViewModel @Inject constructor(
         }
 
         val totalTransactions = history.size
-        val servicesCount = history.groupBy { it.service }.size
+        val servicesCount = history.groupBy { it.serviceName }.size
         val todayCount = history.count { isSameDay(it.date, Calendar.getInstance().time) }
         val thisWeekCount = history.count { 
             val weekAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }.time

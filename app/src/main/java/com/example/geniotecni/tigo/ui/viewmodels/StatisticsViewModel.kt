@@ -196,7 +196,7 @@ class StatisticsViewModel @Inject constructor(
         val successRate = if (totalTransactions > 0) 100.0 else 0.0
         
         // Servicio más usado
-        val serviceUsage = transactions.groupingBy { it.service }.eachCount()
+        val serviceUsage = transactions.groupingBy { it.serviceName }.eachCount()
         val mostUsedService = serviceUsage.maxByOrNull { it.value }?.key ?: "N/A"
         val mostUsedServiceCount = serviceUsage.maxByOrNull { it.value }?.value ?: 0
         
@@ -235,7 +235,7 @@ class StatisticsViewModel @Inject constructor(
      */
     private fun generateChartData(filteredTransactions: List<PrintData>, allTransactions: List<PrintData>): ChartData {
         // Datos para gráfico de servicios (PieChart)
-        val serviceUsage = filteredTransactions.groupingBy { it.service }.eachCount()
+        val serviceUsage = filteredTransactions.groupingBy { it.serviceName }.eachCount()
         val pieChartEntries = serviceUsage.entries
             .sortedByDescending { it.value }
             .take(10) // Top 10 servicios

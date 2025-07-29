@@ -42,7 +42,7 @@ class ExportHelper(private val context: Context) {
                 val amount = extractAmount(data.message)
                 val commission = extractCommission(data.message)
                 
-                csvContent.append("\"${data.service}\",")
+                csvContent.append("\"${data.serviceName}\",")
                 csvContent.append("\"${data.date}\",")
                 csvContent.append("\"${data.time}\",")
                 csvContent.append("\"${data.referenceData.ref1}\",")
@@ -142,7 +142,7 @@ class ExportHelper(private val context: Context) {
         history.forEach { data ->
             totalAmount += extractAmount(data.message)
             totalCommission += extractCommission(data.message)
-            serviceCount[data.service] = serviceCount.getOrDefault(data.service, 0) + 1
+            serviceCount[data.serviceName] = serviceCount.getOrDefault(data.serviceName, 0) + 1
         }
         
         document.add(Paragraph("Total de transacciones: ${history.size}", normalFont))
@@ -186,7 +186,7 @@ class ExportHelper(private val context: Context) {
             val amount = extractAmount(data.message)
             
             val cells = arrayOf(
-                data.service,
+                data.serviceName,
                 data.date,
                 data.time,
                 formatAmount(amount),

@@ -110,7 +110,7 @@ class OptimizedPrintHistoryAdapter(
      */
     private fun bindPrintData(holder: ViewHolder, printData: PrintData, context: Context, isExpanded: Boolean) {
         // Basic info
-        holder.textViewService.text = printData.service
+        holder.textViewService.text = printData.serviceName
         holder.textViewDateTime.text = FunctionalAdapterComponents.TextFormatters.formatDateTime(
             printData.date, printData.time
         )
@@ -119,7 +119,7 @@ class OptimizedPrintHistoryAdapter(
         val processedData = transactionProcessor.processTransactionData(printData)
 
         // Functional icon loading
-        loadServiceIcon(holder, printData.service, context)
+        loadServiceIcon(holder, printData.serviceName, context)
 
         // Functional field setup - eliminates repetitive show/hide logic
         setupDataFieldsFunctionally(holder, processedData)
@@ -190,11 +190,12 @@ class OptimizedPrintHistoryAdapter(
     }
 
     /**
-     * Expandable content setup
+     * FASE 9: Expandable content setup - usar rawMessage para consistencia
      */
     private fun setupExpandableContent(holder: ViewHolder, printData: PrintData, isExpanded: Boolean, context: Context) {
         holder.textViewMessage.apply {
-            text = printData.message
+            // FASE 9: Usar rawMessage para garantizar que el historial muestre exactamente lo impreso
+            text = printData.rawMessage
             visibility = if (isExpanded) View.VISIBLE else View.GONE
 
             if (isExpanded) {
@@ -207,7 +208,7 @@ class OptimizedPrintHistoryAdapter(
      * Fallback binding for error cases
      */
     private fun bindFallbackData(holder: ViewHolder, printData: PrintData, context: Context) {
-        holder.textViewService.text = printData.service
+        holder.textViewService.text = printData.serviceName
         holder.textViewDateTime.text = "${printData.date} ${printData.time}"
         holder.serviceIcon.setImageResource(R.drawable.ic_service_default)
         holder.statusChip.text = "Error"
@@ -235,7 +236,7 @@ class OptimizedPrintHistoryAdapter(
             oldList = printHistory,
             newList = newData,
             areItemsTheSame = { old, new -> 
-                old.service == new.service && old.date == new.date && old.time == new.time
+                old.serviceName == new.serviceName && old.date == new.date && old.time == new.time
             }
         )
         
@@ -279,10 +280,10 @@ class OptimizedPrintHistoryAdapter(
      */
     private fun shareTransaction(context: Context, printData: PrintData) {
         val shareText = buildString {
-            append("Transacción ${printData.service}\n")
+            append("Transacción ${printData.serviceName}\n")
             append("Fecha: ${printData.date} ${printData.time}\n")
             append("------------------------\n")
-            append(printData.message)
+            append(printData.rawMessage)
         }
 
         val shareIntent = android.content.Intent().apply {
@@ -309,11 +310,11 @@ class OptimizedPrintHistoryAdapter(
         val processedData = transactionProcessor.processTransactionData(printData)
         
         val details = buildString {
-            append("Servicio: ${printData.service}\n")
+            append("Servicio: ${printData.serviceName}\n")
             append("Fecha: ${printData.date}\n")
             append("Hora: ${printData.time}\n")
 
-            val amount = transactionProcessor.extractNumericAmount(printData.message)
+            val amount = transactionProcessor.extractNumericAmount(printData.rawMessage)
             if (amount > 0) {
                 append("Monto: ${transactionProcessor.formatAmount(amount)}\n")
                 val commission = transactionProcessor.calculateCommission(amount)
