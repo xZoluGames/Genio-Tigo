@@ -94,7 +94,7 @@ class SearchServices : AppCompatActivity() {
     // Use new architecture components
     private val serviceRepository = OptimizedServiceRepository.getInstance()
     
-    // ViewModel with dependency injection
+    // ViewModel with dependency injection - ready for reactive UI when needed
     private val viewModel: SearchServicesViewModel by viewModels()
 
     // UI Components

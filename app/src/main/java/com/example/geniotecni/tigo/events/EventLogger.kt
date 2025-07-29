@@ -73,25 +73,24 @@ class EventLogger @Inject constructor(
     private fun logEvent(event: AppEvent) {
         val eventType = event::class.simpleName ?: "UnknownEvent"
         val timestamp = event.timestamp
-        val eventId = event.eventId
         
         // Actualizar estadísticas
         eventStats[eventType] = eventStats.getOrDefault(eventType, 0) + 1
         
         // Log según tipo de evento
         when (event) {
-            is TransactionEvent -> logTransactionEvent(event, eventType, eventId)
-            is UIEvent -> logUIEvent(event, eventType, eventId)
-            is BluetoothEvent -> logBluetoothEvent(event, eventType, eventId)
-            is DataEvent -> logDataEvent(event, eventType, eventId)
-            is SystemEvent -> logSystemEvent(event, eventType, eventId)
+            is TransactionEvent -> logTransactionEvent(event, eventType)
+            is UIEvent -> logUIEvent(event, eventType)
+            is BluetoothEvent -> logBluetoothEvent(event, eventType)
+            is DataEvent -> logDataEvent(event, eventType)
+            is SystemEvent -> logSystemEvent(event, eventType)
         }
     }
     
     /**
      * Log específico para eventos de transacción
      */
-    private fun logTransactionEvent(event: TransactionEvent, eventType: String, eventId: String) {
+    private fun logTransactionEvent(event: TransactionEvent, eventType: String) {
         when (event) {
             is TransactionStarted -> {
                 AppLogger.i(TAG, "🚀 [$eventType] Transacción iniciada - Servicio: ${event.serviceName} (${event.serviceId}) | ID: ${event.transactionId}")
@@ -114,7 +113,7 @@ class EventLogger @Inject constructor(
     /**
      * Log específico para eventos de UI
      */
-    private fun logUIEvent(event: UIEvent, eventType: String, eventId: String) {
+    private fun logUIEvent(event: UIEvent, eventType: String) {
         when (event) {
             is NavigationRequested -> {
                 AppLogger.d(TAG, "🧭 [$eventType] Navegación solicitada - De: ${event.fromScreen} → A: ${event.toScreen}")
@@ -146,7 +145,7 @@ class EventLogger @Inject constructor(
     /**
      * Log específico para eventos de Bluetooth
      */
-    private fun logBluetoothEvent(event: BluetoothEvent, eventType: String, eventId: String) {
+    private fun logBluetoothEvent(event: BluetoothEvent, eventType: String) {
         when (event) {
             is BluetoothStateChanged -> {
                 val status = if (event.enabled) "activado" else "desactivado"
@@ -177,7 +176,7 @@ class EventLogger @Inject constructor(
     /**
      * Log específico para eventos de datos
      */
-    private fun logDataEvent(event: DataEvent, eventType: String, eventId: String) {
+    private fun logDataEvent(event: DataEvent, eventType: String) {
         when (event) {
             is DataSaved -> {
                 AppLogger.d(TAG, "💾 [$eventType] Datos guardados - Tipo: ${event.dataType} | ID: ${event.recordId} | Tamaño: ${event.size} bytes")
@@ -204,7 +203,7 @@ class EventLogger @Inject constructor(
     /**
      * Log específico para eventos del sistema
      */
-    private fun logSystemEvent(event: SystemEvent, eventType: String, eventId: String) {
+    private fun logSystemEvent(event: SystemEvent, eventType: String) {
         when (event) {
             is PermissionGranted -> {
                 val status = if (event.granted) "otorgado" else "denegado"

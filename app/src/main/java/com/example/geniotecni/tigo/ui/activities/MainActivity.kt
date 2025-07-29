@@ -80,7 +80,7 @@ import com.example.geniotecni.tigo.ui.viewmodels.MainViewModel
 class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
 
     companion object {
-        private const val BLUETOOTH_UUID = "00001101-0000-1000-8000-00805F9B34FB"
+        // BLUETOOTH_UUID eliminado - no utilizado, manejado por BluetoothManager
         private const val DECIMAL_FORMAT_PATTERN = "#,###"
         private const val DATE_FORMAT = "dd-MM-yyyy"
         private const val TIME_FORMAT = "HH:mm:ss"
@@ -183,6 +183,9 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
                 currentServiceType = 0
                 updateServiceConfiguration(0)
             }
+
+            // Setup ViewModel observers
+            setupViewModelObservers()
 
             AppLogger.i(TAG, "=== MAIN ACTIVITY INICIALIZADA CORRECTAMENTE ===")
             AppLogger.logMemoryUsage(TAG, "MainActivity onCreate final")
@@ -729,56 +732,11 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
 
 
 
-    private fun isValidDate(date: String): Boolean {
-        return try {
-            val parts = date.split("/")
-            if (parts.size != 3) return false
+    // Date validation removed - handled by ViewModel
 
-            val day = parts[0].toInt()
-            val month = parts[1].toInt()
-            val year = parts[2].toInt()
+    // Bluetooth device check removed - handled by BluetoothManager
 
-            day in 1..31 && month in 1..12 && year in 1900..2100
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    private fun checkBluetoothDevice(): Boolean {
-        val sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE)
-        val deviceAddress = sharedPreferences.getString("BluetoothDeviceAddress", null)
-
-        if (deviceAddress == null) {
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Dispositivo Bluetooth")
-                .setMessage("No se ha configurado ningún dispositivo Bluetooth. ¿Desea configurar uno ahora?")
-                .setPositiveButton("Configurar") { _, _ ->
-                    startActivity(Intent(this, Bt::class.java))
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
-            return false
-        }
-
-        AppLogger.i(TAG, "Dispositivo Bluetooth configurado correctamente")
-        return true
-    }
-
-    private var processingDialog: Dialog? = null
-
-    private fun showProcessingDialog() {
-        processingDialog = Dialog(this, R.style.Theme_Material3_DayNight_Dialog).apply {
-            setContentView(R.layout.dialog_processing)
-            setCancelable(false)
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            show()
-        }
-    }
-
-    private fun hideProcessingDialog() {
-        processingDialog?.dismiss()
-        processingDialog = null
-    }
+    // Processing dialog removed - using Snackbar for feedback in MVVM
 
     private fun showSuccessDialog(printData: PrintData) {
         MaterialAlertDialogBuilder(this)
@@ -860,31 +818,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
     }
 
 
-    private fun setupPermissions() {
-        val permissions = arrayOf(
-            Manifest.permission.SEND_SMS,
-            Manifest.permission.READ_SMS,
-            Manifest.permission.CALL_PHONE,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            permissions.plus(arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ))
-        }
-
-        val permissionsToRequest = permissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (permissionsToRequest.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), PERMISSION_REQUEST_CODE)
-        }
-    }
+    // Permission setup removed - handled by system or individual components
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         // Let edit mode manager handle touch events if in edit mode
@@ -922,42 +856,7 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
         return OptimizedServiceConfiguration.hasUSSDSupport(serviceType)
     }
 
-    private fun makeCallWithSIM(phoneNumber: String, simSlot: Int = 0) {
-        AppLogger.i(TAG, "Iniciando llamada USSD: $phoneNumber (SIM $simSlot)")
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-            AppLogger.w(TAG, "Permiso CALL_PHONE no concedido - Solicitando")
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CALL_PHONE), PERMISSION_REQUEST_CODE)
-            return
-        }
-
-        try {
-            val telecomManager = getSystemService(TELECOM_SERVICE) as TelecomManager
-            val phoneAccountHandles = telecomManager.callCapablePhoneAccounts
-
-            if (phoneAccountHandles.isNotEmpty()) {
-                val selectedSim = if (simSlot < phoneAccountHandles.size) {
-                    phoneAccountHandles[simSlot]
-                } else {
-                    phoneAccountHandles[0] // Default to first SIM
-                }
-
-                val callIntent = Intent(Intent.ACTION_CALL).apply {
-                    data = Uri.parse("tel:${Uri.encode(phoneNumber)}")
-                    putExtra(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, selectedSim)
-                }
-
-                startActivity(callIntent)
-                AppLogger.logNetworkEvent(TAG, "Llamada USSD iniciada", phoneNumber)
-                showSnackbar("Iniciando llamada USSD...")
-            } else {
-                AppLogger.w(TAG, "No se encontraron SIMs disponibles")
-                showSnackbar("No se encontraron SIMs disponibles")
-            }
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Error crítico en llamada USSD", e)
-            showSnackbar("Error al realizar la llamada: ${e.message}")
-        }
-    }
+    // SIM call method removed - handled by USSDIntegrationHelper
 
     private fun processUSSDForService() {
         val phone = phoneInput.text.toString().replace("-", "")
@@ -1267,6 +1166,109 @@ class MainActivity : AppCompatActivity(), USSDIntegrationHelper.USSDCallback {
             }
             .setNeutralButton("Cancelar", null)
             .show()
+    }
+
+    /**
+     * Configura observadores del ViewModel para conectar con la UI
+     */
+    private fun setupViewModelObservers() {
+        // Observar cambios de servicio actual
+        lifecycleScope.launch {
+            viewModel.currentService.collect { serviceItem ->
+                serviceItem?.let {
+                    currentService = it
+                    currentServiceType = it.id
+                    updateServiceConfiguration(it.id)
+                    
+                    // Actualizar UI del servicio
+                    serviceImage.setImageResource(it.icon)
+                    serviceTitle.text = it.name
+                    toolbar.title = it.name
+                }
+            }
+        }
+
+        // Observar estado de transacción
+        lifecycleScope.launch {
+            viewModel.transactionState.collect { state ->
+                when (state) {
+                    is MainViewModel.TransactionState.Idle -> {
+                        // Estado inicial - limpiar UI si es necesario
+                    }
+                    is MainViewModel.TransactionState.Processing -> {
+                        // Mostrar indicador de carga
+                        showSnackbar("Procesando transacción...")
+                    }
+                    is MainViewModel.TransactionState.Success -> {
+                        // Transacción exitosa - mostrar diálogo de impresión
+                        showSuccessDialog(state.printData)
+                    }
+                    is MainViewModel.TransactionState.Error -> {
+                        // Error en transacción
+                        showSnackbar("Error: ${state.message}")
+                    }
+                }
+            }
+        }
+
+        // Observar errores de validación
+        lifecycleScope.launch {
+            viewModel.validationErrors.collect { errors ->
+                // Actualizar errores en los TextInputLayouts
+                phoneInputLayout.error = errors.phoneError
+                cedulaInputLayout.error = errors.cedulaError
+                amountInputLayout.error = errors.amountError
+                dateInputLayout.error = errors.dateError
+            }
+        }
+
+        // Observar sugerencias de montos
+        lifecycleScope.launch {
+            viewModel.amountSuggestions.collect { suggestions ->
+                // Actualizar chips de montos rápidos
+                updateQuickAmountChips(suggestions)
+            }
+        }
+
+        // Observar eventos de UI
+        lifecycleScope.launch {
+            viewModel.uiEvents.collect { event ->
+                when (event) {
+                    is MainViewModel.UIEvent.ServiceChanged -> {
+                        AppLogger.i(TAG, "Servicio cambiado a: ${event.service.name}")
+                    }
+                    is MainViewModel.UIEvent.ShowError -> {
+                        showSnackbar(event.message)
+                    }
+                    is MainViewModel.UIEvent.TransactionCompleted -> {
+                        AppLogger.i(TAG, "Transacción completada para: ${event.printData.service}")
+                    }
+                    is MainViewModel.UIEvent.ReferencesUpdated -> {
+                        AppLogger.i(TAG, "Referencias actualizadas: ${event.referenceData}")
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Actualiza los chips de montos rápidos con sugerencias del ViewModel
+     */
+    private fun updateQuickAmountChips(suggestions: List<AmountUsageManager.AmountUsageData>) {
+        // Limpiar chips existentes
+        val chipGroup = findViewById<com.google.android.material.chip.ChipGroup>(R.id.quickAmountChipGroup)
+        chipGroup?.removeAllViews()
+        
+        // Agregar chips con sugerencias del ViewModel
+        suggestions.take(5).forEach { suggestion ->
+            val chip = com.google.android.material.chip.Chip(this)
+            chip.text = suggestion.amount.toString()
+            chip.isClickable = true
+            chip.setOnClickListener {
+                findViewById<TextInputEditText>(R.id.amountInput)?.setText(suggestion.amount.toString())
+            }
+            chipGroup?.addView(chip)
+        }
     }
     
     override fun onDestroy() {

@@ -23,8 +23,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.util.UUID
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.activity.viewModels
-import com.example.geniotecni.tigo.ui.viewmodels.BluetoothViewModel
+// import androidx.activity.viewModels - eliminado, viewModel no utilizado
+// import com.example.geniotecni.tigo.ui.viewmodels.BluetoothViewModel - eliminado
 
 @AndroidEntryPoint
 class Bt : AppCompatActivity() {
@@ -45,7 +45,7 @@ class Bt : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     
     // ViewModel with dependency injection
-    private val viewModel: BluetoothViewModel by viewModels()
+    // private val viewModel eliminado - no utilizado en la Activity
 
     private val deviceList = mutableListOf<BluetoothDevice>()
     private val deviceNames = mutableListOf<String>()

@@ -27,15 +27,7 @@ object AppConfig {
         const val EXPORT_BOTH = "both"
     }
     
-    object Permissions {
-        val BLUETOOTH_PERMISSIONS = emptyArray<String>()
-        val PHONE_PERMISSIONS = emptyArray<String>()
-    }
-    
-    object Database {
-        const val DATABASE_NAME = "genio_tigo.db"
-        const val DATABASE_VERSION = 1
-    }
+    // Permissions y Database objects eliminados - no utilizados en el proyecto
     
     object Files {
         const val EXPORT_DIR = "GenioTigo"
@@ -60,14 +52,5 @@ object AppConfig {
         const val DECIMAL_FORMAT = "#,###"
     }
     
-    object Business {
-        const val MIN_AMOUNT = 1000L
-        const val MAX_AMOUNT = 10000000L
-        const val DEFAULT_COMMISSION_RATE = 6.0
-        const val COMMISSION_RATE = 6.0
-        const val PRINT_COOLDOWN_MS = 5000L
-        const val MIN_PHONE_LENGTH = 10
-        const val MIN_CEDULA_LENGTH = 6
-        const val MIN_AMOUNT_PERSONAL = 1000L
-    }
+    // Business object eliminado - constantes no utilizadas en el proyecto
 }

@@ -97,8 +97,8 @@ object ConfigurationOptimizer {
         GOVERNMENT_GREEN(R.color.status_success),
         FINANCIAL(R.color.md_theme_light_secondary),
         COOPERATIVE(R.color.md_theme_light_tertiary),
-        PRIMARY(R.color.md_theme_light_primary),
-        DEFAULT(R.color.md_theme_light_primary)
+        PRIMARY(R.color.md_theme_light_primary)
+        // DEFAULT eliminado - no utilizado en el proyecto
     }
 
     /**

@@ -56,7 +56,7 @@ class PrintHistoryActivity : AppCompatActivity() {
     private lateinit var exportHelper: ExportHelper
     private lateinit var preferencesManager: PreferencesManager
     
-    // ViewModel with dependency injection
+    // ViewModel with dependency injection - ready for reactive UI when needed
     private val viewModel: PrintHistoryViewModel by viewModels()
     
     private lateinit var fabFilter: FloatingActionButton

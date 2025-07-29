@@ -176,29 +176,6 @@ class OptimizedServiceRepository private constructor() {
         )
     }
     
-    // Cache management
-    fun clearCache() {
-        // Cache is lazy-loaded, so clearing requires recreation
-        // This could be implemented with a mutable cache if needed
-    }
-    
-    // Performance monitoring
-    fun getCacheSize(): Int = serviceCache.size
-    
-    // Batch operations for performance
-    fun getServicesBatch(serviceIds: List<Int>): List<ServiceItem> {
-        return serviceIds.mapNotNull { serviceCache[it] }
-    }
-    
-    // Functional filtering with predicates
-    fun filterServices(predicate: (ServiceItem) -> Boolean): List<ServiceItem> {
-        return serviceCache.values.filter(predicate)
-    }
-    
-    // Service validation
-    fun validateService(serviceItem: ServiceItem): Boolean {
-        return serviceItem.name.isNotEmpty() && 
-               serviceItem.description.isNotEmpty() &&
-               serviceItem.id >= 0
-    }
+    // Cache management and utilities removed - not used externally
+    // Core functionality maintained for performance
 }

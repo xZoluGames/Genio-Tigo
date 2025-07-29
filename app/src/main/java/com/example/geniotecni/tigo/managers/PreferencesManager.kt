@@ -150,17 +150,7 @@ class PreferencesManager(context: Context) : BaseManager(context, "PreferencesMa
         return sharedPreferences.getFloat(key, defaultValue)
     }
     
-    fun putString(key: String, value: String) {
-        savePreference(key, value)
-    }
-    
-    fun putInt(key: String, value: Int) {
-        savePreference(key, value)
-    }
-    
-    fun putLong(key: String, value: Long) {
-        savePreference(key, value)
-    }
+    // Generic put methods removed - use specific methods instead
     
     fun putBoolean(key: String, value: Boolean) {
         savePreference(key, value)

@@ -25,8 +25,7 @@ class OptimizedServiceAdapter(
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
-        private const val TYPE_SERVICE = 0
-        private const val TYPE_VIEW_MORE = 1
+        // View type constants removed - handled by functional methods
         private const val TAG = "OptimizedServiceAdapter"
         
         // Repository instance for data access
@@ -131,9 +130,7 @@ class OptimizedServiceAdapter(
         oldServices.updateWith(newServices, this)
     }
 
-    fun updateServicesFromStrings(newServices: List<String>) {
-        updateServices(newServices.toServiceItems())
-    }
+    // String update method removed - use updateServices directly
 
     /**
      * Extension function for functional click handling
@@ -144,23 +141,5 @@ class OptimizedServiceAdapter(
         }
     }
 
-    /**
-     * Memory optimization
-     */
-    fun clearCache() {
-        services.forEach { service ->
-            // Clear any cached data if needed
-        }
-    }
-
-    /**
-     * Performance monitoring
-     */
-    fun getAdapterStats(): Map<String, Any> {
-        return mapOf(
-            "itemCount" to itemCount,
-            "serviceTypes" to services.groupingBy { it.getViewType() }.eachCount(),
-            "memoryUsage" to services.size * 100 // Rough estimate
-        )
-    }
+    // Cache and stats methods removed - not used by UI
 }

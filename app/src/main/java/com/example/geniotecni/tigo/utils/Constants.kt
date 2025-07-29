@@ -88,57 +88,9 @@ object Constants {
         "Reseteo de Pin (Cliente)"                                            // 75
     )
 
-    // Bluetooth constants
-    const val BLUETOOTH_DEVICE_PREF_KEY = "BluetoothDeviceAddress"
-    const val SHARED_PREF_NAME = "MyPrefs"
+    // Constantes no utilizadas eliminadas - solo se mantienen SERVICE_NAMES y Formats (deprecado)
 
-    // File names - Use AppConfig.Files instead for consistency
-    @Deprecated("Use AppConfig.Files.USER_DATA_FILE", ReplaceWith("AppConfig.Files.USER_DATA_FILE"))
-    const val USER_DATA_FILE = AppConfig.Files.USER_DATA_FILE
-    
-    @Deprecated("Use AppConfig.Files.PRINT_HISTORY_FILE", ReplaceWith("AppConfig.Files.PRINT_HISTORY_FILE"))
-    const val PRINT_HISTORY_FILE = AppConfig.Files.PRINT_HISTORY_FILE
-    // Permission request codes
-    const val REQUEST_CODE_CALL_PHONE = 1
-    const val REQUEST_CODE_READ_SMS = 2
-    const val REQUEST_CODE_BLUETOOTH = 3
-
-    // SMS search timeouts
-    const val SMS_SEARCH_TIMEOUT_MS = 300000L // 5 minutes
-
-    // Print retry configuration
-    const val PRINT_RETRY_COUNT = 3
-    const val PRINT_RETRY_DELAY_MS = 1000L
-
-    // Commission rates
-    const val TIGO_COMMISSION_RATE = 0.06f // 6% commission for Tigo services
-
-    // Date formats
-    const val DATE_FORMAT_DISPLAY = "dd-MM-yyyy"
-    const val TIME_FORMAT_DISPLAY = "HH:mm:ss"
-    const val DATE_FORMAT_BIRTH = "ddMMyyyy"
-
-    // Receipt separator
-    const val RECEIPT_SEPARATOR = "====================="
-
-    // Service categories for filtering
-    object ServiceCategories {
-        const val ALL = "Todos"
-        const val TIGO = "Tigo"
-        const val PERSONAL = "Personal"
-        const val GOVERNMENT = "Gobierno"
-        const val COOPERATIVE = "Cooperativas"
-        const val BANK = "Bancos y Financieras"
-        const val COMMERCE = "Comercios"
-        const val OTHER = "Otros"
-    }
-
-    // USSD prefixes by provider
-    object USSDPrefixes {
-        const val TIGO_GENERAL = "*555*"
-        const val PERSONAL_GENERAL = "*200*"
-        const val GOVERNMENT_LEGACY = "*222*" // Legacy prefix for government services
-    }
+    // ServiceCategories y USSDPrefixes eliminados - no utilizados
     // Formats - DEPRECATED: Use AppConfig.Formats instead
     @Deprecated("Use AppConfig.Formats instead", ReplaceWith("AppConfig.Formats"))
     object Formats {
@@ -147,6 +99,5 @@ object Constants {
         const val DATETIME_FORMAT = AppConfig.Formats.DATETIME_FORMAT
         const val DECIMAL_FORMAT = AppConfig.Formats.DECIMAL_FORMAT
     }
-    // SMS sender numbers
-    val SMS_SENDER_NUMBERS = arrayOf("555", "55", "200", "222")
+    // SMS_SENDER_NUMBERS eliminado - no utilizado
 }

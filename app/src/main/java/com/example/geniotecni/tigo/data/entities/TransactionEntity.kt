@@ -89,22 +89,11 @@ data class TransactionEntity(
     val notes: String = ""
 ) {
     
-    // Helper methods for UI display
-    fun getFormattedAmount(): String = (amount / 100.0).formatAsCurrency()
-    fun getFormattedCommission(): String = (commission / 100.0).formatAsCurrency()
-    fun getFormattedTotal(): String = (total / 100.0).formatAsCurrency()
-    fun getFormattedDate(): String = timestamp.formatAsDateTime()
-
-    fun isSuccessful(): Boolean = status == TransactionStatus.COMPLETED
-    fun hasFailed(): Boolean = status == TransactionStatus.FAILED
-    fun isPending(): Boolean = status == TransactionStatus.PENDING
-    
-    fun canBePrinted(): Boolean = status == TransactionStatus.COMPLETED && printData.isNotEmpty()
+    // Core factory methods only - UI formatting handled in ViewModels
     
     companion object {
         // Helper function to convert amount from user input to cents
         fun amountToCents(amount: Int): Long = (amount * 100).toLong()
-        fun centsToAmount(cents: Long): Int = (cents / 100).toInt()
         
         // Factory methods
         fun create(

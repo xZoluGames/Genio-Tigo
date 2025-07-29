@@ -85,18 +85,7 @@ class PrintCooldownManager(context: Context) : BaseManager(context, "PrintCooldo
         return true
     }
     
-    fun getRemainingPrints(): Int {
-        val status = canPrint()
-        return if (status.canPrint) {
-            MAX_PRINTS_PER_PERIOD - status.printCount
-        } else {
-            0
-        }
-    }
-    
-    fun getPrintStatus(): PrintStatus {
-        return canPrint()
-    }
+    // Info methods removed - not used externally
     
     fun resetPrintCount() {
         savePreference(PRINT_COUNT_KEY, 0)
@@ -116,20 +105,5 @@ class PrintCooldownManager(context: Context) : BaseManager(context, "PrintCooldo
         }
     }
     
-    fun getCooldownInfo(): String {
-        val timeUntilReset = getTimeUntilReset()
-        
-        if (timeUntilReset == 0L) {
-            return "Contador reiniciado"
-        }
-        
-        val minutes = (timeUntilReset / (60L * 1000L)).toInt()
-        val seconds = ((timeUntilReset % (60L * 1000L)) / 1000L).toInt()
-        
-        return if (minutes > 0) {
-            "${minutes}m ${seconds}s para reiniciar contador"
-        } else {
-            "${seconds}s para reiniciar contador"
-        }
-    }
+    // Cooldown info removed - not displayed in UI
 }

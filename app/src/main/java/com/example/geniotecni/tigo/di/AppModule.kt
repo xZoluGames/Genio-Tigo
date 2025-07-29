@@ -3,6 +3,8 @@ package com.example.geniotecni.tigo.di
 import android.content.Context
 import com.example.geniotecni.tigo.data.repository.ServiceRepository
 import com.example.geniotecni.tigo.data.repository.OptimizedServiceRepository
+import com.example.geniotecni.tigo.data.repository.TransactionRepository
+import com.example.geniotecni.tigo.data.database.AppDatabase
 import com.example.geniotecni.tigo.data.processors.TransactionDataProcessor
 import com.example.geniotecni.tigo.managers.*
 import com.example.geniotecni.tigo.helpers.*
@@ -59,6 +61,13 @@ object AppModule {
     @Singleton
     fun provideTransactionDataProcessor(): TransactionDataProcessor {
         return TransactionDataProcessor.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTransactionRepository(@ApplicationContext context: Context): TransactionRepository {
+        val database = AppDatabase.getDatabase(context)
+        return TransactionRepository(database.transactionDao(), context)
     }
 
     @Provides

@@ -50,17 +50,7 @@ class TransactionRepository(
         }
     }
 
-    suspend fun deleteById(id: Long) {
-        withContext(Dispatchers.IO) {
-            transactionDao.deleteById(id)
-        }
-    }
-
-    suspend fun deleteAll() {
-        withContext(Dispatchers.IO) {
-            transactionDao.deleteAll()
-        }
-    }
+    // Bulk delete operations removed - not used in application flow
 
     // Query operations
     suspend fun getById(id: Long): TransactionEntity? {
@@ -81,11 +71,7 @@ class TransactionRepository(
         return transactionDao.getAllFlow()
     }
 
-    suspend fun getPaginated(limit: Int, offset: Int): List<TransactionEntity> {
-        return withContext(Dispatchers.IO) {
-            transactionDao.getPaginated(limit, offset)
-        }
-    }
+    // Pagination removed - not used in current UI flow
 
     // Filter operations
     fun getByServiceId(serviceId: Int): Flow<List<TransactionEntity>> {
@@ -356,34 +342,7 @@ class TransactionRepository(
         return "REF${System.currentTimeMillis()}"
     }
 
-    // Cleanup operations
-    suspend fun deleteOldTransactions(daysOld: Int = 365) {
-        withContext(Dispatchers.IO) {
-            val cutoffTimestamp = System.currentTimeMillis() - (daysOld * 24 * 60 * 60 * 1000L)
-            transactionDao.deleteOldTransactions(cutoffTimestamp)
-        }
-    }
+    // Automatic cleanup operations removed - manual maintenance preferred
 
-    suspend fun cancelOldPendingTransactions(hoursOld: Int = 24) {
-        withContext(Dispatchers.IO) {
-            val cutoffTimestamp = System.currentTimeMillis() - (hoursOld * 60 * 60 * 1000L)
-            transactionDao.cancelOldPendingTransactions(cutoffTimestamp)
-        }
-    }
-
-    // Export functionality
-    suspend fun getAllForExport(): List<TransactionEntity> {
-        return withContext(Dispatchers.IO) {
-            transactionDao.getAllForExport()
-        }
-    }
-
-    // Validation
-    suspend fun findDuplicateTransaction(phone: String, amount: Int, withinMinutes: Int = 5): TransactionEntity? {
-        return withContext(Dispatchers.IO) {
-            val recentTimestamp = System.currentTimeMillis() - (withinMinutes * 60 * 1000L)
-            val amountCents = TransactionEntity.amountToCents(amount)
-            transactionDao.findDuplicateTransaction(phone, amountCents, recentTimestamp)
-        }
-    }
+    // Export and duplicate detection removed - handled by higher-level managers
 }

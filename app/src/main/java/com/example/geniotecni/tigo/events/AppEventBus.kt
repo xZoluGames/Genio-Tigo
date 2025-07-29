@@ -162,6 +162,4 @@ fun generateTransactionId(): String {
     return "TXN_${System.currentTimeMillis()}_${(1000..9999).random()}"
 }
 
-fun generateJobId(): String {
-    return "JOB_${System.currentTimeMillis()}_${(100..999).random()}"
-}
+// generateJobId() removed - not used in application

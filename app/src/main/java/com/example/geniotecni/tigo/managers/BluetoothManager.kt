@@ -116,6 +116,7 @@ class BluetoothManager(context: Context) : BaseManager(context, "BluetoothManage
         Thread {
             try {
                 AppLogger.i(TAG, "Iniciando impresión a ${device.name ?: device.address}")
+                AppLogger.logPrintEvent(TAG, "INICIANDO", "Dispositivo: ${device.name ?: device.address}")
                 val uuid = UUID.fromString(BLUETOOTH_UUID)
                 val socket = device.createRfcommSocketToServiceRecord(uuid)
                 
@@ -129,7 +130,7 @@ class BluetoothManager(context: Context) : BaseManager(context, "BluetoothManage
                 val alignCenterCommand = byteArrayOf(0x1B, 0x61, 0x01) // ESC a 1 - Center alignment
                 val largeFontCommand = byteArrayOf(0x1D, 0x21, 0x11) // GS ! 0x11 - Large font
                 val normalFontCommand = byteArrayOf(0x1B, 0x21, 0x00) // ESC ! 0 - Normal font
-                val cutCommand = byteArrayOf(0x1D, 0x56, 0x00) // GS V 0 - Cut paper
+                // cutCommand eliminado - no utilizado en la secuencia de impresión
                 
                 outputStream.apply {
                     write(initCommand)
@@ -148,13 +149,16 @@ class BluetoothManager(context: Context) : BaseManager(context, "BluetoothManage
                 
                 socket.close()
                 AppLogger.i(TAG, "Impresión completada exitosamente")
+                AppLogger.logPrintEvent(TAG, "COMPLETADA", "Datos enviados exitosamente", success = true)
                 onResult(true, null)
                 
             } catch (e: IOException) {
                 AppLogger.e(TAG, "Error durante la impresión", e)
+                AppLogger.logPrintEvent(TAG, "ERROR_IO", "Error de conexión: ${e.message}", success = false)
                 onResult(false, "Error de impresión: ${e.message}")
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Error inesperado durante la impresión", e)
+                AppLogger.logPrintEvent(TAG, "ERROR_INESPERADO", "Error: ${e.message}", success = false)
                 onResult(false, "Error inesperado: ${e.message}")
             }
         }.start()

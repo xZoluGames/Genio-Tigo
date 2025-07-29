@@ -36,8 +36,7 @@ class OptimizedPrintHistoryAdapter(
     }
 
     private val expandedItems = mutableSetOf<Int>()
-    private val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    private val timeFormatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    // Date/time formatters removed - using direct string formatting
     
     // Optimized architecture components
     private val transactionProcessor = TransactionDataProcessor.getInstance()
@@ -53,7 +52,7 @@ class OptimizedPrintHistoryAdapter(
         val buttonReprint: MaterialButton = view.findViewById(R.id.buttonReprint)
         val buttonMore: MaterialButton = view.findViewById(R.id.buttonMore)
         val statusChip: Chip = view.findViewById(R.id.statusChip)
-        val detailsContainer: LinearLayout = view.findViewById(R.id.detailsContainer)
+        // Details container removed - details handled inline
         
         // Data fields
         val phoneRow: LinearLayout = view.findViewById(R.id.phoneRow)
