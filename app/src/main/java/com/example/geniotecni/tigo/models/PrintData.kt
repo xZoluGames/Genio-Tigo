@@ -68,10 +68,7 @@ data class PrintData(
                 serviceName = serviceName,
                 fields = fields,
                 amount = amount,
-                references = PrintMessageGenerator.ReferenceData(
-                    referenceData.ref1,
-                    referenceData.ref2
-                ),
+                references = referenceData,
                 serviceConfig = serviceConfig
             )
             

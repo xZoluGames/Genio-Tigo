@@ -2,6 +2,7 @@ package com.example.geniotecni.tigo
 
 import com.example.geniotecni.tigo.utils.PrintMessageGenerator
 import com.example.geniotecni.tigo.utils.PrintConfiguration
+import com.example.geniotecni.tigo.models.ReferenceData
 import org.junit.Test
 import org.junit.Assert.*
 
@@ -14,7 +15,7 @@ class PrintMessageGeneratorTest {
     @Test
     fun testESSAPPrintFormat() {
         val fields = mapOf("issan" to "ZV123456")
-        val references = PrintMessageGenerator.ReferenceData("150000", "REF123")
+        val references = ReferenceData("150000", "REF123")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 8,
@@ -34,7 +35,7 @@ class PrintMessageGeneratorTest {
     @Test
     fun testANDEPrintFormat() {
         val fields = mapOf("nis" to "987654321")
-        val references = PrintMessageGenerator.ReferenceData("125000", "ANDE789")
+        val references = ReferenceData("125000", "ANDE789")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 7,
@@ -56,7 +57,7 @@ class PrintMessageGeneratorTest {
             "numero" to "0981234567",
             "cedula" to "1234567"
         )
-        val references = PrintMessageGenerator.ReferenceData("TX123", "TX456")
+        val references = ReferenceData("TX123", "TX456")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 0,
@@ -78,7 +79,7 @@ class PrintMessageGeneratorTest {
     @Test
     fun testPersonalPrintFormat() {
         val fields = mapOf("numero" to "0971234567")
-        val references = PrintMessageGenerator.ReferenceData("PER789", "")
+        val references = ReferenceData("PER789", "")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 10,
@@ -98,7 +99,7 @@ class PrintMessageGeneratorTest {
     @Test
     fun testGenericServiceFormat() {
         val fields = mapOf("ci" to "7654321")
-        val references = PrintMessageGenerator.ReferenceData("85000", "GEN456")
+        val references = ReferenceData("85000", "GEN456")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 13, // Alex S.A
@@ -117,7 +118,7 @@ class PrintMessageGeneratorTest {
     @Test
     fun testCardServiceFormat() {
         val fields = mapOf("tarjeta" to "12345678")
-        val references = PrintMessageGenerator.ReferenceData("95000", "CARD123")
+        val references = ReferenceData("95000", "CARD123")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 34, // Cooperativa Universitaria Mastercard
@@ -139,7 +140,7 @@ class PrintMessageGeneratorTest {
             "cedula" to "1111111",
             "nacimiento" to "01011990"
         )
-        val references = PrintMessageGenerator.ReferenceData("RST123", "RST456")
+        val references = ReferenceData("RST123", "RST456")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 75,
@@ -158,7 +159,7 @@ class PrintMessageGeneratorTest {
     @Test
     fun testDateTimeFormatting() {
         val fields = mapOf("numero" to "0981234567")
-        val references = PrintMessageGenerator.ReferenceData("TEST123", "")
+        val references = ReferenceData("TEST123", "")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 10,
@@ -184,7 +185,7 @@ class PrintMessageGeneratorTest {
     @Test
     fun testPlaceholdersCleaning() {
         val fields = mapOf("numero" to "0981234567")
-        val references = PrintMessageGenerator.ReferenceData("", "")
+        val references = ReferenceData("", "")
         
         val message = PrintMessageGenerator.generateMessage(
             serviceId = 10,
